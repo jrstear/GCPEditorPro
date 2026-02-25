@@ -451,6 +451,9 @@ export class ImageGcp {
     public gcpName: string;
 
     public extras: string[];
+
+    /** True when the user has shift-clicked to confirm this pixel estimate. */
+    public confirmed?: boolean;
 }
 
 export function exportImgName(imgName: string): string{

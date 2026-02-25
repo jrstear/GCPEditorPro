@@ -26,6 +26,8 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
 
     @Output() public pin = new EventEmitter();
     @Input() public src: string;
+    /** Pin color: 'yellow' (unconfirmed estimate) or 'green' (user-confirmed). */
+    @Input() public pinColor: string = 'yellow';
     @ViewChild('img') img: ElementRef;
     @ViewChild('pin') pinDiv: ElementRef;
     @ViewChild('msg') msgDiv: ElementRef;
