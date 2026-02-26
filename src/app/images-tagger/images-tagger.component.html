@@ -47,7 +47,12 @@
 <!-- Zoom View: left crop column + right full-image panel -->
 <div *ngIf="zoomView && images !== null" class="zoom-layout mt-2">
     <div class="crop-column">
-        <div *ngFor="let desc of images" (mouseenter)="selectDesc(desc)">
+        <div *ngFor="let desc of images" (mouseenter)="selectDesc(desc)" style="position: relative;">
+            <button type="button" class="close crop-remove" aria-label="Close"
+                    [title]="(desc.isTagged && desc.otherGcps.length > 0) ? 'Untag GCP' : 'Remove Image'"
+                    (click)="remove(desc); $event.stopPropagation()">
+                <span aria-hidden="true">&times;</span>
+            </button>
             <app-sub-image-crop
                 [imgUrl]="getImageRawUrl(desc.image.imgName)"
                 [imgName]="desc.image.imgName"

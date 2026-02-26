@@ -423,29 +423,41 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
     public remove(desc: ImageDescriptor) {
 
-        let internal_remove = () => {
+        const wasTagged = desc.isTagged;
+
+        const removeFromView = () => {
             this.images = this.images.filter(item => item.image.imgName !== desc.image.imgName);
             this.rawImages = this.rawImages.filter(item => item.image.imgName !== desc.image.imgName);
-            this.storage.removeImage(desc.image.imgName);
-
+            // Keep the large panel from showing the removed item in zoom view.
+            if (this.selectedDesc === desc) {
+                this.selectedDesc = this.images.length > 0 ? this.images[0] : null;
+            }
             // Notify smart images that pins might have to be refreshed
             window.dispatchEvent(new CustomEvent('smartImagesLayoutChanged'));
         };
 
         if (desc.otherGcps.length > 0) {
-            if (desc.isTagged){
+            if (wasTagged) {
+                // Unpin and remove from the current GCP's view.
+                // Do NOT remove from storage — other GCPs still reference this image.
                 this.unpin(desc);
-            }else{
+                removeFromView();
+            } else {
                 const modalRef = this.modalService.open(ConfirmDialogComponent, { ariaLabelledBy: 'modal-basic-title' });
-    
+
                 modalRef.componentInstance.title = "Remove Image";
                 modalRef.componentInstance.text = "This image is associated with other GCPs. Do you want to remove it anyway?";
                 modalRef.result.then((result) => {
-                    if (result === 'yes') internal_remove();
+                    if (result === 'yes') {
+                        this.storage.removeImage(desc.image.imgName);
+                        removeFromView();
+                    }
                 });
             }
         } else {
-            internal_remove();
+            if (wasTagged) this.unpin(desc);
+            this.storage.removeImage(desc.image.imgName);
+            removeFromView();
         }
 
     }
