@@ -75,6 +75,36 @@ input {
     }
 }
 
+.zoom-layout {
+    display: flex;
+    height: calc(100vh - 200px);
+    min-height: 400px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    overflow: hidden;
+
+    .crop-column {
+        width: 280px;
+        flex-shrink: 0;
+        overflow-y: auto;
+        border-right: 1px solid #dee2e6;
+        background: #fafafa;
+    }
+
+    .full-image-panel {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: #222;
+
+        .full-image-header {
+            background: #fff;
+            flex-shrink: 0;
+        }
+    }
+}
+
 .dyn-w{
     width: 25% !important;
 }

@@ -21,21 +21,36 @@
             <!--<div class="alert alert-info" *ngIf="descriptor !== null">
                 <fa-icon icon="info-circle" class="mr-2"></fa-icon>The GCP file has been successfully loaded. Now select the images using the box below.
             </div>-->
-            <div class="custom-file mt-3" *ngIf="descriptor !== null">
-                <input type="file" class="custom-file-input" (change)="imagesSelected($event)" accept="image/*" multiple="true"
-                    id="images">
-                <label class="custom-file-label mb-0" for="images">
-                    <span *ngIf="images == null">Select the images referenced in the GCP file</span>
-                    <span *ngIf="images != null">{{images.length}} image{{images.length !== 1 ? 's' : ''}} matched</span>
-                </label>
-                <div class="mt-2" *ngIf="loadValue !== 0 && loadValue !== 100"><ngb-progressbar [showValue]="true" type="success" [value]="loadValue" [max]="100"></ngb-progressbar></div>
+            <div class="mt-3" *ngIf="descriptor !== null">
+                <!-- Folder picker (preferred): loads all matching images from a directory at once -->
+                <div class="custom-file">
+                    <input type="file" class="custom-file-input" (change)="imagesSelected($event)"
+                        webkitdirectory id="imageFolder">
+                    <label class="custom-file-label mb-0" for="imageFolder">
+                        <fa-icon icon="folder-open" class="mr-2"></fa-icon>
+                        <span *ngIf="images == null">Select image folder (loads all matching images at once)</span>
+                        <span *ngIf="images != null">{{images.length}} image{{images.length !== 1 ? 's' : ''}} matched from folder</span>
+                    </label>
+                </div>
+                <!-- Individual file picker fallback -->
+                <div class="custom-file mt-2">
+                    <input type="file" class="custom-file-input" (change)="imagesSelected($event)"
+                        accept="image/*" multiple="true" id="images">
+                    <label class="custom-file-label mb-0" for="images">
+                        <fa-icon icon="images" class="mr-2"></fa-icon>
+                        <span>Or select individual image files</span>
+                    </label>
+                </div>
+                <div class="mt-2" *ngIf="loadValue !== 0 && loadValue !== 100">
+                    <ngb-progressbar [showValue]="true" type="success" [value]="loadValue" [max]="100"></ngb-progressbar>
+                </div>
             </div>
 
             <div class="custom-file mt-3" *ngIf="descriptor !== null">
                 <input type="file" class="custom-file-input" (change)="estimatesSelected($event)" accept=".json"
                     id="estimatesFile">
                 <label class="custom-file-label mb-0" for="estimatesFile">
-                    <span *ngIf="estimatesFileName == null">Load estimates sidecar (optional): gcpeditpro.estimates.json</span>
+                    <span *ngIf="estimatesFileName == null">Load estimates sidecar (optional): gcp_estimates.json</span>
                     <span *ngIf="estimatesFileName != null" class="text-success">
                         <fa-icon icon="check-circle" class="mr-1"></fa-icon>{{estimatesFileName}} loaded
                     </span>

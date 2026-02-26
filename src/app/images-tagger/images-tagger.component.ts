@@ -41,6 +41,10 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
     public page: number = 1;
 
+    // Zoom View state
+    public zoomView: boolean = localStorage.getItem('zoomView') === 'true';
+    public selectedDesc: ImageDescriptor | null = null;
+
     // This page size is a "safe" number, we could use a bigger one but we risk to nuke the browser
     public pageSize: number = 10;
 
@@ -200,6 +204,30 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
     }
 
+    public getImageRawUrl(name: string): string {
+        return this.storage.getImageUrl(name);
+    }
+
+    public toggleZoomView() {
+        this.zoomView = !this.zoomView;
+        localStorage.setItem('zoomView', this.zoomView.toString());
+        if (this.zoomView) this._autoSelectDesc();
+    }
+
+    public selectDesc(desc: ImageDescriptor) {
+        this.selectedDesc = desc;
+    }
+
+    private _autoSelectDesc() {
+        // Prefer first image that has an estimate but isn't confirmed yet.
+        // Fall back to first tagged, then first image overall.
+        this.selectedDesc =
+            this.images.find(d => d.isTagged && !d.image.confirmed) ??
+            this.images.find(d => d.isTagged) ??
+            this.images[0] ??
+            null;
+    }
+
     public toggleFilterByDistance(){
         this.filterByDistance = !this.filterByDistance;
         this.filterImages();
@@ -243,6 +271,8 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         if (this.filterByDistance){
             localStorage.setItem("filterDistance", this.filterDistance.toString());
         }
+
+        if (this.zoomView) this._autoSelectDesc();
     }
 
     public toggleFilterSettings(){
@@ -373,6 +403,8 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         desc.isTagged = true;
         desc.image.imX = location.x;
         desc.image.imY = location.y;
+        desc.image.confirmed = true;
+        desc.pinLocation = location;
     }
 
     public unpin(desc: ImageDescriptor): void{

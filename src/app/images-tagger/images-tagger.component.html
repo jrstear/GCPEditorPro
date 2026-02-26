@@ -34,18 +34,74 @@
             Detect GCPs
         </button>
     </div>
+    <div class="col-md-auto">
+        <button class="btn" [ngClass]="{'btn-primary': zoomView, 'btn-outline-secondary': !zoomView}"
+                type="button" (click)="toggleZoomView()"
+                title="Toggle between cropped-thumbnail column and standard grid view">
+            <fa-icon icon="crop" class="mr-2"></fa-icon>
+            {{zoomView ? 'Standard View' : 'Zoom View'}}
+        </button>
+    </div>
 </div>
-<div class="row mt-2">
+
+<!-- Zoom View: left crop column + right full-image panel -->
+<div *ngIf="zoomView && images !== null" class="zoom-layout mt-2">
+    <div class="crop-column">
+        <div *ngFor="let desc of images">
+            <app-sub-image-crop
+                [imgUrl]="getImageRawUrl(desc.image.imgName)"
+                [imgName]="desc.image.imgName"
+                [imX]="desc.image.imX"
+                [imY]="desc.image.imY"
+                [confirmed]="desc.image.confirmed"
+                [hasEstimate]="desc.isTagged"
+                [isSelected]="desc === selectedDesc"
+                (selectCrop)="selectDesc(desc)">
+            </app-sub-image-crop>
+        </div>
+        <div class="alert alert-info m-2" *ngIf="!isLoading && filterByDistance && rawImages.length > 0 && images.length === 0">
+            <fa-icon icon="info-circle" class="mr-2"></fa-icon>
+            No images within {{filterDistance}}m. Turn off distance filter.
+        </div>
+    </div>
+    <div class="full-image-panel" *ngIf="selectedDesc; else noSelection">
+        <div class="full-image-header text-muted small px-2 py-1 border-bottom">
+            {{selectedDesc.image.imgName}}
+            <span *ngIf="selectedDesc.image.confirmed" class="badge badge-success ml-2">Confirmed</span>
+            <span *ngIf="selectedDesc.isTagged && !selectedDesc.image.confirmed" class="badge badge-warning ml-2">Estimated</span>
+            <span *ngIf="!selectedDesc.isTagged" class="badge badge-secondary ml-2">Untagged</span>
+        </div>
+        <app-smartimage #smartImage
+            *ngIf="selectedDesc.imageUrl !== null"
+            [src]="selectedDesc.imageUrl"
+            [pinLocation]="selectedDesc.pinLocation"
+            [pinColor]="selectedDesc.image.confirmed ? 'green' : 'yellow'"
+            (pin)="pin($event, selectedDesc)"
+            style="display: block; overflow: hidden; width: 100%; height: 100%;">
+        </app-smartimage>
+        <div *ngIf="selectedDesc.imageUrl === null" class="p-4 text-muted">
+            <fa-icon icon="image" class="mr-2"></fa-icon>Image not loaded yet.
+        </div>
+    </div>
+    <ng-template #noSelection>
+        <div class="full-image-panel d-flex align-items-center justify-content-center text-muted">
+            Select an image from the left column.
+        </div>
+    </ng-template>
+</div>
+
+<!-- Standard View: paginated grid -->
+<div *ngIf="!zoomView" class="row mt-2">
     <div class="col" *ngIf="images !== null">
         <div *ngFor="let desc of images | slice: (page-1) * pageSize : page * pageSize" class="align-top d-inline-block text-center border dyn-w">
             <span class="badge d-block rounded-0" [ngClass]="getClass(desc)">
                 <h5 class="m-1 title">{{getName(desc)}}
                     <fa-layers [fixedWidth]="true" class="ml-3" *ngIf="filterByDistance && desc.distance == null" title="This image has no EXIF location data">
-                        <fa-icon [styles]="{'color': '#2c3e50'}" icon="map-marker-alt"></fa-icon>  
+                        <fa-icon [styles]="{'color': '#2c3e50'}" icon="map-marker-alt"></fa-icon>
                         <fa-icon icon="slash"></fa-icon>
                     </fa-layers>
                 </h5>
-                
+
                 <button [title]="(desc.isTagged && desc.otherGcps.length > 0) ? 'Untag GCP' : 'Remove Image'" type="button" class="close" aria-label="Close" (click)="remove(desc)">
                     <span aria-hidden="true">&times;</span>
                 </button>

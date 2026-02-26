@@ -64,9 +64,8 @@ export class ExportConfigComponent implements OnInit {
         }
 
         const content = this.getTxtContent();
-
-        const file = new File([content], 'gcp_list.txt', {type: 'text/plain;charset=utf-8'});
-        FileSaver.saveAs(file, 'gcp_list.txt');
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        FileSaver.saveAs(blob, 'gcp_list.txt');
     }
 
     public back() {

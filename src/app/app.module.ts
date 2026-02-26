@@ -21,6 +21,7 @@ import { fas } from '@fortawesome/free-solid-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
 import { SmartimageComponent } from './smartimage/smartimage.component';
 import { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
+import { SubImageCropComponent } from './sub-image-crop/sub-image-crop.component';
 import { NgOpenCVModule, OpenCVOptions } from "ng-open-cv";
 
 const openCVConfig: OpenCVOptions = {
@@ -41,7 +42,8 @@ const openCVConfig: OpenCVOptions = {
         ImagesTaggerComponent,
         SmartimageComponent,
         LicenseInfoComponent,
-        ConfirmDialogComponent
+        ConfirmDialogComponent,
+        SubImageCropComponent
     ],
     imports: [
         BrowserModule,
