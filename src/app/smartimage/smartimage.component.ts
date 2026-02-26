@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter, Input, ViewChild, ElementRef, AfterViewInit, HostListener } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, Input, ViewChild, ElementRef, AfterViewInit, HostListener, ChangeDetectorRef } from '@angular/core';
 import * as Panzoom from '@panzoom/panzoom';
 import { fromEvent, timer, TimeoutError } from 'rxjs';
 import { CoordsXY } from '../../shared/common';
@@ -11,7 +11,7 @@ import { CoordsXY } from '../../shared/common';
 export class SmartimageComponent implements OnInit, AfterViewInit {
     showMessage: boolean;
 
-    constructor() { }
+    constructor(private el: ElementRef) { }
 
     @Input()
     get pinLocation() {
@@ -28,6 +28,8 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
     @Input() public src: string;
     /** Pin color: 'yellow' (unconfirmed estimate) or 'green' (user-confirmed). */
     @Input() public pinColor: string = 'yellow';
+    /** When true, zoom/pan the image to fit its container on each load. Use in fixed-size panels. */
+    @Input() public autoFit: boolean = false;
     @ViewChild('img') img: ElementRef;
     @ViewChild('pin') pinDiv: ElementRef;
     @ViewChild('msg') msgDiv: ElementRef;
@@ -44,6 +46,7 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
 
     @HostListener('window:resize', ['$event'])
     onResize(event) {
+        if (this.autoFit) this._fitToContainer();
         this.syncPinPosition();
     }
 
@@ -113,6 +116,24 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
 
                 return;
             }
+            // When a pin is set, zoom around the GCP screen position so it stays fixed.
+            // Use zoomToPoint() which takes { clientX, clientY } viewport coordinates.
+            if (this.pinLocationValue !== null) {
+                const pinScreen = this.getPinLocation();
+                if (pinScreen) {
+                    const parentRect = this.img.nativeElement.parentElement.getClientRects()[0];
+                    // On Mac with shift, deltaY becomes 0 and deltaX carries the scroll.
+                    const delta = e.deltaY === 0 && e.deltaX ? e.deltaX : e.deltaY;
+                    const wheel = delta < 0 ? 1 : -1;
+                    const toScale = Math.min(300, Math.max(0.125, this.panzoom.getScale() * Math.exp((wheel * 0.7) / 3)));
+                    this.panzoom.zoomToPoint(toScale, {
+                        clientX: parentRect.left + pinScreen.x,
+                        clientY: parentRect.top + pinScreen.y
+                    });
+                    e.preventDefault();
+                    return;
+                }
+            }
             // Panzoom will automatically use `deltaX` here instead
             // of `deltaY`. On a mac, the shift modifier usually
             // translates to horizontal scrolling, but Panzoom assumes
@@ -123,10 +144,22 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
             this.msgDiv.nativeElement.style.opacity = 0;
         })
 
-        this.syncPinPosition();
+        // Fit image to container on every load (handles src changes + initial load)
+        const onLoad = () => {
+            if (this.autoFit) this._fitToContainer();
+            this.syncPinPosition();
+        };
+        this.img.nativeElement.addEventListener('load', onLoad);
+        // Handle already-loaded (cached) images
+        if (this.img.nativeElement.complete && this.img.nativeElement.naturalWidth > 0) {
+            setTimeout(() => onLoad(), 0);
+        }
 
         this.onSmartImagesLayoutChanged = () => {
-            setTimeout(this.syncPinPosition.bind(this), 250);
+            setTimeout(() => {
+                if (this.autoFit) this._fitToContainer();
+                this.syncPinPosition();
+            }, 250);
         };
         window.addEventListener("smartImagesLayoutChanged", this.onSmartImagesLayoutChanged);
     }
@@ -188,6 +221,29 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
     }
 
     ngOnInit(): void {
+    }
+
+    private _fitToContainer(): void {
+        const img = this.img.nativeElement;
+        const nw = img.naturalWidth;
+        const nh = img.naturalHeight;
+        if (!nw || !nh || !this.panzoom) return;
+        const container = this.el.nativeElement;
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        if (!cw || !ch) return;
+        const s = Math.min(cw / nw, ch / nh);
+        const fw = Math.round(nw * s);
+        const fh = Math.round(nh * s);
+        // Set an explicit CSS size equal to the fitted dimensions so that panzoom
+        // scale=1 means "fit to container", bypassing the 320px CSS constraints.
+        img.style.maxWidth = 'none';
+        img.style.maxHeight = 'none';
+        img.style.width = `${fw}px`;
+        img.style.height = `${fh}px`;
+        this.panzoom.zoom(1, { animate: false });
+        // At scale=1 visual top-left = (panX, panY), so center directly.
+        this.panzoom.pan((cw - fw) / 2, (ch - fh) / 2, { animate: false });
     }
 
     private getPos(e: MouseEvent): CoordsXY {

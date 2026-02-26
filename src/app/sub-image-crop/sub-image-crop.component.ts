@@ -1,15 +1,20 @@
 import { Component, Input, Output, EventEmitter, ViewChild, ElementRef, AfterViewInit, OnChanges, SimpleChanges } from '@angular/core';
 
 const CROP = 256;
+const CROSSHAIR_SIZE = 32;
+const CROSSHAIR_IMG = new Image();
+/** Callbacks waiting for the crosshair image to load. */
+const crosshairCallbacks: Array<() => void> = [];
+CROSSHAIR_IMG.onload = () => { crosshairCallbacks.forEach(cb => cb()); crosshairCallbacks.length = 0; };
+CROSSHAIR_IMG.src = './assets/crosshair.png';
 
 @Component({
     selector: 'app-sub-image-crop',
     template: `
         <div class="crop-wrapper"
              [class.selected]="isSelected"
-             [style.borderColor]="borderColor"
-             (click)="selectCrop.emit()">
-            <canvas #canvas [width]="CROP" [height]="CROP"></canvas>
+             [style.borderColor]="borderColor">
+            <canvas #canvas [width]="CROP" [height]="CROP" (click)="onCanvasClick($event)"></canvas>
         </div>
         <div class="crop-label" [title]="imgName">{{imgName}}</div>
     `,
@@ -41,7 +46,8 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
     @Input() confirmed: boolean;
     @Input() hasEstimate: boolean;
     @Input() isSelected: boolean;
-    @Output() selectCrop = new EventEmitter<void>();
+    /** Emits full-image pixel coords when user clicks in the crop canvas. */
+    @Output() clickPosition = new EventEmitter<{x: number, y: number}>();
 
     @ViewChild('canvas') canvasRef: ElementRef<HTMLCanvasElement>;
 
@@ -110,16 +116,32 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
         ctx.clearRect(0, 0, CROP, CROP);
         ctx.drawImage(this._img, sx, sy, CROP, CROP, 0, 0, CROP, CROP);
 
-        // Draw crosshair at GCP position within crop
+        // Draw crosshair.png at GCP position within crop.
+        // Yellow (no filter) = unconfirmed estimate; green filter = confirmed.
         if (this.hasEstimate || this.confirmed) {
             const px = cx - sx;
             const py = cy - sy;
-            ctx.strokeStyle = this.confirmed ? '#28a745' : '#ffc107';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(px - 12, py); ctx.lineTo(px + 12, py);
-            ctx.moveTo(px, py - 12); ctx.lineTo(px, py + 12);
-            ctx.stroke();
+            const drawCrosshair = () => {
+                ctx.save();
+                if (this.confirmed) {
+                    ctx.filter = 'hue-rotate(100deg) saturate(3) brightness(1.2)';
+                }
+                ctx.drawImage(CROSSHAIR_IMG, px - CROSSHAIR_SIZE / 2, py - CROSSHAIR_SIZE / 2, CROSSHAIR_SIZE, CROSSHAIR_SIZE);
+                ctx.restore();
+            };
+            if (CROSSHAIR_IMG.complete && CROSSHAIR_IMG.naturalWidth > 0) {
+                drawCrosshair();
+            } else {
+                crosshairCallbacks.push(() => this._draw());
+            }
         }
+    }
+
+    public onCanvasClick(e: MouseEvent): void {
+        if (!this._img) return;
+        const half = CROP / 2;
+        const sx = Math.max(0, Math.min(this.imX - half, this._img.naturalWidth  - CROP));
+        const sy = Math.max(0, Math.min(this.imY - half, this._img.naturalHeight - CROP));
+        this.clickPosition.emit({ x: sx + e.offsetX, y: sy + e.offsetY });
     }
 }

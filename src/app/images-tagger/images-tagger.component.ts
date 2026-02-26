@@ -399,6 +399,11 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         this.router.navigateByUrl('gcps-map');
     }
 
+    public pinFromSubImage(pos: {x: number, y: number}, desc: ImageDescriptor): void {
+        this.selectDesc(desc);
+        this.pin(pos, desc);
+    }
+
     public pin(location: CoordsXY, desc: ImageDescriptor): void {
         desc.isTagged = true;
         desc.image.imX = location.x;

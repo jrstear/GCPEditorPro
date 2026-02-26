@@ -47,7 +47,7 @@
 <!-- Zoom View: left crop column + right full-image panel -->
 <div *ngIf="zoomView && images !== null" class="zoom-layout mt-2">
     <div class="crop-column">
-        <div *ngFor="let desc of images">
+        <div *ngFor="let desc of images" (mouseenter)="selectDesc(desc)">
             <app-sub-image-crop
                 [imgUrl]="getImageRawUrl(desc.image.imgName)"
                 [imgName]="desc.image.imgName"
@@ -56,7 +56,7 @@
                 [confirmed]="desc.image.confirmed"
                 [hasEstimate]="desc.isTagged"
                 [isSelected]="desc === selectedDesc"
-                (selectCrop)="selectDesc(desc)">
+                (clickPosition)="pinFromSubImage($event, desc)">
             </app-sub-image-crop>
         </div>
         <div class="alert alert-info m-2" *ngIf="!isLoading && filterByDistance && rawImages.length > 0 && images.length === 0">
@@ -76,8 +76,9 @@
             [src]="selectedDesc.imageUrl"
             [pinLocation]="selectedDesc.pinLocation"
             [pinColor]="selectedDesc.image.confirmed ? 'green' : 'yellow'"
+            [autoFit]="true"
             (pin)="pin($event, selectedDesc)"
-            style="display: block; overflow: hidden; width: 100%; height: 100%;">
+            style="display: block; overflow: hidden; width: 100%; flex: 1; min-height: 0;">
         </app-smartimage>
         <div *ngIf="selectedDesc.imageUrl === null" class="p-4 text-muted">
             <fa-icon icon="image" class="mr-2"></fa-icon>Image not loaded yet.
