@@ -122,12 +122,7 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
             const px = cx - sx;
             const py = cy - sy;
             const drawCrosshair = () => {
-                ctx.save();
-                if (this.confirmed) {
-                    ctx.filter = 'hue-rotate(100deg) saturate(3) brightness(1.2)';
-                }
                 ctx.drawImage(CROSSHAIR_IMG, px - CROSSHAIR_SIZE / 2, py - CROSSHAIR_SIZE / 2, CROSSHAIR_SIZE, CROSSHAIR_SIZE);
-                ctx.restore();
             };
             if (CROSSHAIR_IMG.complete && CROSSHAIR_IMG.naturalWidth > 0) {
                 drawCrosshair();
