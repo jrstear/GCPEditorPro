@@ -129,7 +129,18 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         if (this.storage.images.length === 0)
             return;
 
-        this.rawImages = this.storage.images.map(img => {
+        // Only show images that are associated with this GCP.
+        // Without this filter the component would load every image in storage
+        // (potentially thousands), causing severe slowdowns and OOM crashes.
+        const associatedImgNames = new Set(
+            this.storage.imageGcps
+                .filter(ig => ig.gcpName === gcpName)
+                .map(ig => ig.imgName)
+        );
+
+        this.rawImages = this.storage.images
+            .filter(img => associatedImgNames.has(img.name))
+            .map(img => {
 
             const gcps = this.storage.imageGcps.filter(imgGcp => imgGcp.imgName === img.name);
             const res = gcps.find(item => item.gcpName === gcpName);
@@ -383,10 +394,11 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
     public ok(): void {
 
-        // Save in storage
+        // Save in storage. Use rawImages (not the distance-filtered this.images)
+        // so that tagged images outside the current filter radius are not silently dropped.
         const tmp = this.storage.imageGcps.filter(img => img.gcpName !== this.gcp.name);
 
-        tmp.push(...this.images.filter(item => item.isTagged).map(itm => itm.image));
+        tmp.push(...this.rawImages.filter(item => item.isTagged).map(itm => itm.image));
 
         this.storage.imageGcps = tmp;
 
