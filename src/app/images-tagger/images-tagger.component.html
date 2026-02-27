@@ -35,11 +35,12 @@
         </button>
     </div>
     <div class="col-md-auto">
-        <button class="btn" [ngClass]="{'btn-primary': zoomView, 'btn-outline-secondary': !zoomView}"
+        <button class="btn" [ngClass]="{'btn-primary': zoomView, 'btn-light': !zoomView}"
                 type="button" (click)="toggleZoomView()"
                 title="Toggle between cropped-thumbnail column and standard grid view">
-            <fa-icon icon="crop" class="mr-2"></fa-icon>
-            {{zoomView ? 'Standard View' : 'Zoom View'}}
+            <fa-icon *ngIf="zoomView" icon="toggle-on" class="mr-2"></fa-icon>
+            <fa-icon *ngIf="!zoomView" icon="toggle-off" class="mr-2"></fa-icon>
+            Zoom View
         </button>
     </div>
 </div>
@@ -130,7 +131,7 @@
     <button class="btn btn-primary ml-3" (click)="back()">
         <fa-icon icon="long-arrow-alt-left" class="mr-2"></fa-icon>Cancel
     </button>
-    <ngb-pagination *ngIf="images.length > pageSize" class="d-flex justify-content-center" [collectionSize]="images.length" [(page)]="page" [maxSize]="5" [rotate]="true" [boundaryLinks]="true"></ngb-pagination>
+    <ngb-pagination *ngIf="!zoomView && images.length > pageSize" class="d-flex justify-content-center" [collectionSize]="images.length" [(page)]="page" [maxSize]="5" [rotate]="true" [boundaryLinks]="true"></ngb-pagination>
     <button class="btn btn-primary mr-3" (click)="ok()">Save Changes
         <fa-icon icon="save" class="ml-2"></fa-icon>
     </button>
