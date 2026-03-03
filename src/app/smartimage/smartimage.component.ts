@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter, Input, ViewChild, ElementRef, AfterViewInit, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, Output, EventEmitter, Input, ViewChild, ElementRef, AfterViewInit, HostListener, ChangeDetectorRef } from '@angular/core';
 import * as Panzoom from '@panzoom/panzoom';
 import { fromEvent, timer, TimeoutError } from 'rxjs';
 import { CoordsXY } from '../../shared/common';
@@ -8,7 +8,7 @@ import { CoordsXY } from '../../shared/common';
     templateUrl: './smartimage.component.html',
     styleUrls: ['./smartimage.component.scss']
 })
-export class SmartimageComponent implements OnInit, AfterViewInit {
+export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
     showMessage: boolean;
 
     constructor(private el: ElementRef) { }
@@ -30,9 +30,12 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
     @Input() public pinColor: string = 'yellow';
     /** When true, zoom/pan the image to fit its container on each load. Use in fixed-size panels. */
     @Input() public autoFit: boolean = false;
+    /** Crop-box to draw on the large image (matches the selected sub-image crop). */
+    @Input() public cropBox: { imX: number, imY: number, color: string } | null = null;
     @ViewChild('img') img: ElementRef;
     @ViewChild('pin') pinDiv: ElementRef;
     @ViewChild('msg') msgDiv: ElementRef;
+    @ViewChild('cropBoxDiv') cropBoxDiv: ElementRef;
 
     pinLocationValue: CoordsXY = null;
     onSmartImagesLayoutChanged = null;
@@ -44,10 +47,17 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
 
     private wheelMessageTimeout: any;
 
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['cropBox']) {
+            this.syncCropBox();
+        }
+    }
+
     @HostListener('window:resize', ['$event'])
     onResize(event) {
         if (this.autoFit) this._fitToContainer();
         this.syncPinPosition();
+        this.syncCropBox();
     }
 
     ngAfterViewInit(): void {
@@ -81,6 +91,7 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
 
                 timeout = setTimeout(() => {
                     this.syncPinPosition();
+                    this.syncCropBox();
                     this.pinDiv.nativeElement.style.display = 'block';
                 }, 250);
             }
@@ -148,6 +159,7 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
         const onLoad = () => {
             if (this.autoFit) this._fitToContainer();
             this.syncPinPosition();
+            this.syncCropBox();
         };
         this.img.nativeElement.addEventListener('load', onLoad);
         // Handle already-loaded (cached) images
@@ -159,6 +171,7 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
             setTimeout(() => {
                 if (this.autoFit) this._fitToContainer();
                 this.syncPinPosition();
+                this.syncCropBox();
             }, 250);
         };
         window.addEventListener("smartImagesLayoutChanged", this.onSmartImagesLayoutChanged);
@@ -186,6 +199,34 @@ export class SmartimageComponent implements OnInit, AfterViewInit {
         this.pinDiv.nativeElement.style.left = (location.x - this.pinDiv.nativeElement.width / 2) + 'px';
         this.pinDiv.nativeElement.style.top = (location.y - this.pinDiv.nativeElement.height / 2) + 'px';
         this.pinDiv.nativeElement.style.display = 'block';
+    }
+
+    private syncCropBox() {
+        if (!this.cropBoxDiv) return;
+        const div = this.cropBoxDiv.nativeElement;
+        if (!this.cropBox || !this.panzoom) {
+            div.style.display = 'none';
+            return;
+        }
+        const img = this.img.nativeElement;
+        const nw = img.naturalWidth;
+        const nh = img.naturalHeight;
+        if (!nw || !nh) { div.style.display = 'none'; return; }
+        const rect = img.getClientRects()[0];
+        if (!rect) { div.style.display = 'none'; return; }
+        const parentRect = img.parentElement.getClientRects()[0];
+        const zoom = this.panzoom.getScale();
+        const scaleX = (rect.width / zoom) / nw;
+        const scaleY = (rect.height / zoom) / nh;
+        const CROP = 256;
+        const sx = Math.max(0, Math.min(this.cropBox.imX - CROP / 2, nw - CROP));
+        const sy = Math.max(0, Math.min(this.cropBox.imY - CROP / 2, nh - CROP));
+        div.style.left   = ((rect.left - parentRect.left) + sx * scaleX * zoom) + 'px';
+        div.style.top    = ((rect.top  - parentRect.top)  + sy * scaleY * zoom) + 'px';
+        div.style.width  = (CROP * scaleX * zoom) + 'px';
+        div.style.height = (CROP * scaleY * zoom) + 'px';
+        div.style.borderColor = this.cropBox.color;
+        div.style.display = 'block';
     }
 
     public clearPin(){

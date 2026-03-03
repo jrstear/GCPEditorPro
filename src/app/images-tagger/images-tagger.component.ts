@@ -219,6 +219,15 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         return this.storage.getImageUrl(name);
     }
 
+    public getCropBox(desc: ImageDescriptor): { imX: number, imY: number, color: string } | null {
+        if (!desc || !desc.isTagged) return null;
+        return {
+            imX: desc.image.imX,
+            imY: desc.image.imY,
+            color: desc.image.confirmed ? '#28a745' : '#ffc107',
+        };
+    }
+
     public toggleZoomView() {
         this.zoomView = !this.zoomView;
         localStorage.setItem('zoomView', this.zoomView.toString());

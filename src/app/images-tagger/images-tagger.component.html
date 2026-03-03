@@ -82,6 +82,7 @@
             [src]="selectedDesc.imageUrl"
             [pinLocation]="selectedDesc.pinLocation"
             [pinColor]="selectedDesc.image.confirmed ? 'green' : 'yellow'"
+            [cropBox]="getCropBox(selectedDesc)"
             [autoFit]="true"
             (pin)="pin($event, selectedDesc)"
             style="display: block; overflow: hidden; width: 100%; flex: 1; min-height: 0;">
