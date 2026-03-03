@@ -188,8 +188,13 @@ export class GcpsUtilsService {
 
             }
 
-            // Let's take the rest of the array
-            imgGcp.extras = row.slice(7);
+            // Column 7 is the confidence field (e.g. "projection", "mouse_click").
+            // Default to "unknown" if absent (older files without the column).
+            imgGcp.confidence = row[7]?.trim() || 'unknown';
+            imgGcp.confirmed = imgGcp.confidence === 'mouse_click';
+
+            // Let's take the rest of the array (columns 8+)
+            imgGcp.extras = row.slice(8);
 
             // If everything went smooth
             if (result.errors.length === 0) {
@@ -451,6 +456,9 @@ export class ImageGcp {
     public gcpName: string;
 
     public extras: string[];
+
+    /** Confidence level: "projection" (pipeline estimate), "mouse_click" (user-positioned), "unknown" (legacy). */
+    public confidence?: string;
 
     /** True when the user has shift-clicked to confirm this pixel estimate. */
     public confirmed?: boolean;

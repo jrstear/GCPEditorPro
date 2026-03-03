@@ -25,10 +25,6 @@ export class LoadConfigTxtComponent implements OnInit {
 
     public loadValue = 0;
 
-    /** Parsed .estimates.json data, set when user selects the sidecar file. */
-    public estimatesData: { [gcpLabel: string]: { [imgName: string]: { px: number; py: number; mode?: string } } } | null = null;
-    public estimatesFileName: string = null;
-
     private handleDrop = null;
 
     constructor(
@@ -117,28 +113,6 @@ export class LoadConfigTxtComponent implements OnInit {
         }
 
         this.handleTxt(file);
-    }
-
-    public estimatesSelected(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.readAsText(file, 'UTF-8');
-        reader.onload = evt => {
-            try {
-                this.estimatesData = JSON.parse(evt.target.result as string);
-                this.estimatesFileName = file.name;
-            } catch (e) {
-                this.estimatesData = null;
-                this.estimatesFileName = null;
-                this.errors = ['Could not parse estimates file: ' + e.message];
-            }
-        };
-        reader.onerror = () => {
-            this.estimatesData = null;
-            this.estimatesFileName = null;
-        };
     }
 
     public handleTxt(file, done = undefined){
@@ -231,43 +205,7 @@ export class LoadConfigTxtComponent implements OnInit {
         this.storageService.projection = this.txtParseResult.descriptor.projection;
         this.storageService.gcps = this.txtParseResult.descriptor.gcps;
         this.storageService.prevNames = {};
-
-        // Merge estimates into imageGcps if a sidecar was loaded.
-        // Estimates come from gcpeditpro.estimates.json (pipeline output).
-        const imageGcps = [...this.txtParseResult.descriptor.imageGcps];
-        if (this.estimatesData) {
-            const gcpByName: { [name: string]: any } = {};
-            for (const gcp of this.storageService.gcps) {
-                gcpByName[gcp.name] = gcp;
-            }
-
-            for (const [gcpLabel, imgMap] of Object.entries(this.estimatesData)) {
-                const gcp = gcpByName[gcpLabel];
-                if (!gcp) continue;  // GCP not in loaded .txt — skip
-
-                for (const [imgName, est] of Object.entries(imgMap)) {
-                    // Don't overwrite an existing entry for this gcp+image pair
-                    const existing = imageGcps.find(
-                        ig => ig.gcpName === gcpLabel && ig.imgName === imgName
-                    );
-                    if (existing) continue;
-
-                    const ig = new ImageGcp();
-                    ig.gcpName = gcpLabel;
-                    ig.imgName = imgName;
-                    ig.geoX = gcp.easting;
-                    ig.geoY = gcp.northing;
-                    ig.geoZ = gcp.elevation;
-                    ig.imX = est.px;
-                    ig.imY = est.py;
-                    ig.confirmed = false;
-                    ig.extras = [];
-                    imageGcps.push(ig);
-                }
-            }
-        }
-
-        this.storageService.imageGcps = imageGcps;
+        this.storageService.imageGcps = [...this.txtParseResult.descriptor.imageGcps];
         this.router.navigateByUrl('/gcps-map');
     }
 

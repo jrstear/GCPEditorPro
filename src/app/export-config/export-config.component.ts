@@ -47,7 +47,8 @@ export class ExportConfigComponent implements OnInit {
         let content = this.projection.to_str() + '\n';
 
         for (const img of this.imageGcps) {
-            content += `${img.geoX}\t${img.geoY}\t${img.geoZ}\t${img.imX}\t${img.imY}\t${exportImgName(img.imgName)}\t${img.gcpName}\t${img.extras.join('\t')}`.trim() + '\n';
+            const conf = img.confidence || 'unknown';
+            content += `${img.geoX}\t${img.geoY}\t${img.geoZ}\t${img.imX}\t${img.imY}\t${exportImgName(img.imgName)}\t${img.gcpName}\t${conf}\t${img.extras.join('\t')}`.trim() + '\n';
         }
 
         return content;
