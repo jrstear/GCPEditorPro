@@ -42,16 +42,21 @@ export class ExportConfigComponent implements OnInit {
         window.dispatchEvent(new CustomEvent('enterLicense'));
     }
 
-    private getTxtContent(): string {
+    private getTxtContent(confirmedOnly = false): string {
 
         let content = this.projection.to_str() + '\n';
 
-        for (const img of this.imageGcps) {
+        const rows = confirmedOnly ? this.imageGcps.filter(img => img.confirmed) : this.imageGcps;
+        for (const img of rows) {
             const conf = img.confidence || 'unknown';
             content += `${img.geoX}\t${img.geoY}\t${img.geoZ}\t${img.imX}\t${img.imY}\t${exportImgName(img.imgName)}\t${img.gcpName}\t${conf}\t${img.extras.join('\t')}`.trim() + '\n';
         }
 
         return content;
+    }
+
+    public get confirmedCount(): number {
+        return this.imageGcps.filter(img => img.confirmed).length;
     }
 
     public exportImgName(imgName: string): string{
@@ -67,6 +72,17 @@ export class ExportConfigComponent implements OnInit {
         const content = this.getTxtContent();
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         FileSaver.saveAs(blob, 'gcp_list.txt');
+    }
+
+    public exportConfirmed() {
+        if (this.storage.getLicense().demo) {
+            window.dispatchEvent(new CustomEvent('enterLicense'));
+            return;
+        }
+
+        const content = this.getTxtContent(true);
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        FileSaver.saveAs(blob, 'gcp_confirmed.txt');
     }
 
     public back() {
