@@ -132,14 +132,19 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         // Only show images that are associated with this GCP.
         // Without this filter the component would load every image in storage
         // (potentially thousands), causing severe slowdowns and OOM crashes.
-        const associatedImgNames = new Set(
-            this.storage.imageGcps
-                .filter(ig => ig.gcpName === gcpName)
-                .map(ig => ig.imgName)
-        );
+        //
+        // Build rawImages in gcp_list.txt file order so the zoom view can step
+        // through images in the confidence-optimised sequence from emlid2gcp.py.
+        // The grid view re-sorts via filterImages() and is unaffected.
+        const orderedImgNames = this.storage.imageGcps
+            .filter(ig => ig.gcpName === gcpName)
+            .map(ig => ig.imgName);
 
-        this.rawImages = this.storage.images
-            .filter(img => associatedImgNames.has(img.name))
+        const imageByName = new Map(this.storage.images.map(img => [img.name, img]));
+
+        this.rawImages = orderedImgNames
+            .map(name => imageByName.get(name))
+            .filter(img => img != null)
             .map(img => {
 
             const gcps = this.storage.imageGcps.filter(imgGcp => imgGcp.imgName === img.name);
@@ -233,7 +238,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
     public toggleZoomView() {
         this.zoomView = !this.zoomView;
         localStorage.setItem('zoomView', this.zoomView.toString());
-        if (this.zoomView) this._autoSelectDesc();
+        this.filterImages();
     }
 
     public selectDesc(desc: ImageDescriptor) {
@@ -267,30 +272,36 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
     public filterImages() {
 
         // console.log("Filtering images with " + this.filterDistance + "m distance");
-        
+
         this.page = 1;
 
-        this.images = (this.filterByDistance) ? this.rawImages
-            .filter(img => img.distance == null || img.distance < this.filterDistance)
-            .sort((a, b) => {
-                if ((!a.isTagged && !b.isTagged) || (a.isTagged && b.isTagged)){
-                    if (a.distance !== null && b.distance !== null){
-                        return a.distance > b.distance ? 1 : -1
-                    }else{
+        // Apply distance filter (or take all); use slice() to avoid mutating rawImages.
+        const filtered = this.filterByDistance
+            ? this.rawImages.filter(img => img.distance == null || img.distance < this.filterDistance)
+            : this.rawImages.slice();
+
+        if (this.zoomView) {
+            // Zoom view: preserve file order from gcp_list.txt (emlid2gcp.py ordering)
+            // so the user steps through images in the confidence-optimised sequence.
+            this.images = filtered;
+        } else {
+            // Grid view: tagged before untagged, then by distance / filename.
+            this.images = filtered.sort((a, b) => {
+                if ((!a.isTagged && !b.isTagged) || (a.isTagged && b.isTagged)) {
+                    if (a.distance !== null && b.distance !== null) {
+                        return a.distance > b.distance ? 1 : -1;
+                    } else {
                         return a.image.imgName.localeCompare(b.image.imgName);
                     }
-                }else if (!a.isTagged && b.isTagged){
+                } else if (!a.isTagged && b.isTagged) {
                     return 1;
-                }else{
+                } else {
                     return -1;
                 }
-            }) : this.rawImages.sort((a, b) => {
-                if ((!a.isTagged && !b.isTagged) || (a.isTagged && b.isTagged)) return a.image.imgName.localeCompare(b.image.imgName);
-                else if (!a.isTagged && b.isTagged) return 1;
-                else return -1;
             });
+        }
 
-        if (this.filterByDistance){
+        if (this.filterByDistance) {
             localStorage.setItem("filterDistance", this.filterDistance.toString());
         }
 
