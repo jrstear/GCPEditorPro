@@ -275,8 +275,10 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
         this.page = 1;
 
-        // Apply distance filter (or take all); use slice() to avoid mutating rawImages.
-        const filtered = this.filterByDistance
+        // Distance filter applies only in grid view — zoom view presents all images
+        // in file order so the user works through the confidence-ranked sequence
+        // without images being silently dropped by a radius constraint.
+        const filtered = (!this.zoomView && this.filterByDistance)
             ? this.rawImages.filter(img => img.distance == null || img.distance < this.filterDistance)
             : this.rawImages.slice();
 

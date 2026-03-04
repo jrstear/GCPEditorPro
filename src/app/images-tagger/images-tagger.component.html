@@ -8,7 +8,7 @@
             </label>
         </div>
     </div>
-    <div class="col-md-auto" (click)="$event.stopPropagation()">
+    <div class="col-md-auto" *ngIf="!zoomView" (click)="$event.stopPropagation()">
         <div class="input-group">
             <div class="input-group-append">
                 <div class="filter-settings" *ngIf="showFilterSettings">
@@ -64,10 +64,6 @@
                 [isSelected]="desc === selectedDesc"
                 (clickPosition)="pinFromSubImage($event, desc)">
             </app-sub-image-crop>
-        </div>
-        <div class="alert alert-info m-2" *ngIf="!isLoading && filterByDistance && rawImages.length > 0 && images.length === 0">
-            <fa-icon icon="info-circle" class="mr-2"></fa-icon>
-            No images within {{filterDistance}}m. Turn off distance filter.
         </div>
     </div>
     <div class="full-image-panel" *ngIf="selectedDesc; else noSelection">
