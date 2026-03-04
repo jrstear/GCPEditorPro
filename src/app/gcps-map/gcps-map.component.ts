@@ -49,6 +49,36 @@ export class GcpsMapComponent implements OnInit {
         return 'text-danger';
     }
 
+    private createTopGcpIcon(gcpName: string, confirmedCount: number): L.DivIcon {
+        let bg: string;
+        let fg: string;
+        if (confirmedCount >= GcpsMapComponent.CONFIRMED_GREEN) {
+            bg = '#28a745'; fg = '#fff';
+        } else if (confirmedCount >= GcpsMapComponent.CONFIRMED_AMBER) {
+            bg = '#ffc107'; fg = '#212529';
+        } else {
+            bg = '#dc3545'; fg = '#fff';
+        }
+
+        // Approximate label width for anchor calculation.
+        const w = Math.max(44, gcpName.length * 7 + 16);
+        const h = 24;
+
+        const html = `<div style="background:${bg};color:${fg};padding:3px 7px;` +
+            `border-radius:4px;font-size:11px;font-weight:bold;white-space:nowrap;` +
+            `box-shadow:0 1px 4px rgba(0,0,0,.45);position:relative;">${gcpName}` +
+            `<span style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);` +
+            `width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;` +
+            `border-top:6px solid ${bg};"></span></div>`;
+
+        return L.divIcon({
+            html,
+            className: '',
+            iconSize:   [w, h + 6],
+            iconAnchor: [w / 2, h + 6],
+        });
+    }
+
     private markers: L.FeatureGroup;
     private map: L.Map;
 
@@ -72,23 +102,34 @@ export class GcpsMapComponent implements OnInit {
     private updateGcps(adjustMapBounds: Boolean = false): void{
         this.markers.clearLayers();
         this.gcps.length = 0;
-        this.storage.gcps.forEach(item => {
+        this.storage.gcps.forEach((item, gcpIndex) => {
             const coords = proj4(
                 this.storage.projection.eq,
                 'EPSG:4326').forward([item.easting, item.northing, item.elevation],
                 false);
             const elevation = isNaN(item.elevation) ? "None" : item.elevation;
             const isChk = typeof item.name === "string" && item.name.startsWith("CHK-");
+            const isTopGcp = this.storage.hasPipelineEstimates &&
+                !isChk &&
+                gcpIndex < GcpsMapComponent.TOP_GCP_COUNT;
+
+            // Pre-compute confirmed count for icon colour (GcpInfo not yet built).
+            const confirmedForIcon = this.storage.imageGcps !== null
+                ? this.storage.imageGcps.filter(ig => ig.gcpName === item.name && ig.confirmed).length
+                : 0;
 
             const markerLayer = marker(new L.LatLng(coords[1], coords[0], coords[2]), {
                 title: item.name,
                 riseOnHover: true,
-                icon: icon({
-                    iconSize: [25, 41],
-                    iconAnchor: [13, 41],
-                    iconUrl: isChk ? 'assets/cp-icon-2x.png' : 'leaflet/marker-icon-2x.png',
-                    shadowUrl: 'leaflet/marker-shadow.png'
-                })
+                zIndexOffset: isTopGcp ? 1000 : 0,
+                icon: isTopGcp
+                    ? this.createTopGcpIcon(item.name, confirmedForIcon)
+                    : icon({
+                        iconSize: [25, 41],
+                        iconAnchor: [13, 41],
+                        iconUrl: isChk ? 'assets/cp-icon-2x.png' : 'leaflet/marker-icon-2x.png',
+                        shadowUrl: 'leaflet/marker-shadow.png'
+                    })
             });
             
             const imageIcon = `<svg role="img" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="images" class="svg-inline--fa fa-images fa-w-18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="currentColor" d="M480 416v16c0 26.51-21.49 48-48 48H48c-26.51 0-48-21.49-48-48V176c0-26.51 21.49-48 48-48h16v208c0 44.112 35.888 80 80 80h336zm96-80V80c0-26.51-21.49-48-48-48H144c-26.51 0-48 21.49-48 48v256c0 26.51 21.49 48 48 48h384c26.51 0 48-21.49 48-48zM256 128c0 26.51-21.49 48-48 48s-48-21.49-48-48 21.49-48 48-48 48 21.49 48 48zm-96 144l55.515-55.515c4.686-4.686 12.284-4.686 16.971 0L272 256l135.515-135.515c4.686-4.686 12.284-4.686 16.971 0L512 208v112H160v-48z"></path></svg>`;
