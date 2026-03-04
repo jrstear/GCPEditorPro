@@ -4,14 +4,32 @@
             <div class="card-header">
                 <strong>Ground Control Points</strong>
             </div>
+            <div *ngIf="storage.hasPipelineEstimates"
+                 class="px-3 py-2 border-bottom small font-weight-bold"
+                 [ngClass]="summaryTextClass"
+                 title="Top {{top7Total}} GCPs are the structurally most important (file order). Tag ≥7 images each to reach green.">
+                {{top7ConfirmedCount}} / {{top7Total}} top GCPs sufficiently tagged
+            </div>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item" *ngFor="let gcpMark of gcps" (click)="select(gcpMark)" (dblclick)="editImages(gcpMark.gcp)"
                     [ngClass]="{ 'bg-dark': this.selectedGCP != null && this.selectedGCP.gcp.name === gcpMark.gcp.name, 'text-white': this.selectedGCP != null && this.selectedGCP.gcp.name === gcpMark.gcp.name }">
-                    {{gcpMark.gcp.name}}<span title="3 or more images = good" class="badge ml-2"
-                        [ngClass]="{ 'badge-warning': gcpMark.images.length > 0 && gcpMark.images.length < 3, 'badge-success': gcpMark.images.length >= 3, 'badge-light': gcpMark.images.length == 0 }">{{gcpMark.images.length}}
-                        {{gcpMark.images.length === 1 ? 'image' : 'images'}}</span><button class="btn btn-sm btn-light mr-2 float-right" (click)="editImages(gcpMark.gcp)">
-                            <fa-icon icon="images" class="mr-2"></fa-icon>Tag
-                        </button>
+                    {{gcpMark.gcp.name}}
+                    <!-- Pipeline file: confirmed/total with colour thresholds -->
+                    <span *ngIf="storage.hasPipelineEstimates"
+                          class="badge ml-2"
+                          [ngClass]="gcpBadgeClass(gcpMark.confirmedCount)"
+                          title="{{gcpMark.confirmedCount}} confirmed / {{gcpMark.images.length}} total images (≥7 = green)">
+                        {{gcpMark.confirmedCount}}/{{gcpMark.images.length}}
+                    </span>
+                    <!-- Standard file: old image count -->
+                    <span *ngIf="!storage.hasPipelineEstimates"
+                          title="3 or more images = good" class="badge ml-2"
+                          [ngClass]="{ 'badge-warning': gcpMark.images.length > 0 && gcpMark.images.length < 3, 'badge-success': gcpMark.images.length >= 3, 'badge-light': gcpMark.images.length == 0 }">
+                        {{gcpMark.images.length}} {{gcpMark.images.length === 1 ? 'image' : 'images'}}
+                    </span>
+                    <button class="btn btn-sm btn-light mr-2 float-right" (click)="editImages(gcpMark.gcp)">
+                        <fa-icon icon="images" class="mr-2"></fa-icon>Tag
+                    </button>
                 </li>
             </ul>
         </div>

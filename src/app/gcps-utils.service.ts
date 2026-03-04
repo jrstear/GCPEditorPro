@@ -254,6 +254,13 @@ export class GcpsUtilsService {
             gcps
         };
 
+        // Detect pipeline-generated files: any row with a known confidence value
+        // ('projection' or 'reconstruction') signals that emlid2gcp.py wrote this file
+        // and that GCP/image ordering is meaningful.
+        result.hasPipelineEstimates = imgGcps.some(
+            ig => ig.confidence === 'projection' || ig.confidence === 'reconstruction'
+        );
+
         return result;
 
     }
@@ -436,6 +443,8 @@ export class GCP {
 export class TxtParseResult {
     public errors: string[];
     public descriptor: TxtDescriptor;
+    /** True when at least one row has a pipeline confidence value ('projection' or 'reconstruction'). */
+    public hasPipelineEstimates: boolean = false;
 }
 
 export class TxtDescriptor {

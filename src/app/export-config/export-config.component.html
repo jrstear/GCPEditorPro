@@ -70,9 +70,14 @@
         <button class="btn btn-secondary mr-2" (click)="exportTxt()">
             <fa-icon icon="download" class="mr-2"></fa-icon>Download gcp_list.txt
         </button>
-        <button class="btn btn-success" (click)="exportConfirmed()" [title]="confirmedCount + ' confirmed tags'">
+        <button class="btn" [ngClass]="confirmedBtnClass" (click)="exportConfirmed()" [title]="confirmedCount + ' confirmed tags'">
             <fa-icon icon="download" class="mr-2"></fa-icon>Download gcp_confirmed.txt
-            <span class="badge badge-light ml-1">{{ confirmedCount }}</span>
+            <span *ngIf="storage.hasPipelineEstimates"
+                  class="badge badge-light ml-1"
+                  title="{{top7ConfirmedCount}} of {{top7Total}} top GCPs have ≥7 confirmed images">
+                {{top7ConfirmedCount}}/{{top7Total}} GCPs
+            </span>
+            <span class="badge badge-light ml-1">{{ confirmedCount }} images</span>
         </button>
     </div>
 </div>

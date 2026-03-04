@@ -23,6 +23,32 @@ export class GcpsMapComponent implements OnInit {
     public selectedGCP: GcpInfo = null;
     public isReady: boolean;
 
+    private static readonly TOP_GCP_COUNT = 7;
+    private static readonly CONFIRMED_GREEN = 7;
+    private static readonly CONFIRMED_AMBER = 3;
+
+    public get top7Total(): number {
+        return Math.min(this.gcps.length, GcpsMapComponent.TOP_GCP_COUNT);
+    }
+
+    public get top7ConfirmedCount(): number {
+        return this.gcps.slice(0, GcpsMapComponent.TOP_GCP_COUNT)
+            .filter(g => g.confirmedCount >= GcpsMapComponent.CONFIRMED_GREEN).length;
+    }
+
+    public gcpBadgeClass(confirmedCount: number): string {
+        if (confirmedCount >= GcpsMapComponent.CONFIRMED_GREEN) return 'badge-success';
+        if (confirmedCount >= GcpsMapComponent.CONFIRMED_AMBER) return 'badge-warning';
+        return 'badge-danger';
+    }
+
+    public get summaryTextClass(): string {
+        const n = this.top7ConfirmedCount;
+        if (n >= GcpsMapComponent.CONFIRMED_GREEN) return 'text-success';
+        if (n >= GcpsMapComponent.CONFIRMED_AMBER) return 'text-warning';
+        return 'text-danger';
+    }
+
     private markers: L.FeatureGroup;
     private map: L.Map;
 
@@ -32,7 +58,7 @@ export class GcpsMapComponent implements OnInit {
         zoomControl: false
     };
 
-    constructor(private storage: StorageService, private router: Router, private appRef: ApplicationRef, private ngZone: NgZone) {
+    constructor(public storage: StorageService, private router: Router, private appRef: ApplicationRef, private ngZone: NgZone) {
         if (typeof storage.gcps === 'undefined' ||
             typeof storage.imageGcps === 'undefined' ||
             typeof storage.projection === 'undefined') {
@@ -136,11 +162,14 @@ export class GcpsMapComponent implements OnInit {
                     offset: [0, -20]
                 });
 
+            const allImgGcps = this.storage.imageGcps !== null
+                ? this.storage.imageGcps.filter(img => img.gcpName === item.name)
+                : [];
             const gcpInfo: GcpInfo = {
                 gcp: item,
                 marker: markerLayer,
-                images: this.storage.imageGcps !== null ?
-                    this.storage.imageGcps.filter(img => img.gcpName === item.name).map(img => img.imgName) : []
+                images: allImgGcps.map(img => img.imgName),
+                confirmedCount: allImgGcps.filter(img => img.confirmed).length
             };
 
             markerLayer.on('click', e => {
@@ -328,5 +357,6 @@ class GcpInfo {
     public gcp: GCP;
     public marker: L.Marker;
     public images: string[];
+    public confirmedCount: number;
 }
 

@@ -55,8 +55,33 @@ export class ExportConfigComponent implements OnInit {
         return content;
     }
 
+    private static readonly TOP_GCP_COUNT = 7;
+    private static readonly CONFIRMED_GREEN = 7;
+    private static readonly CONFIRMED_AMBER = 3;
+
     public get confirmedCount(): number {
         return this.imageGcps.filter(img => img.confirmed).length;
+    }
+
+    public get top7Total(): number {
+        return Math.min(this.gcps.length, ExportConfigComponent.TOP_GCP_COUNT);
+    }
+
+    /** Number of top-7 GCPs that have reached the green threshold (≥7 confirmed images). */
+    public get top7ConfirmedCount(): number {
+        return this.gcps.slice(0, ExportConfigComponent.TOP_GCP_COUNT).filter(gcp => {
+            const n = this.imageGcps.filter(ig => ig.gcpName === gcp.name && ig.confirmed).length;
+            return n >= ExportConfigComponent.CONFIRMED_GREEN;
+        }).length;
+    }
+
+    /** Bootstrap button class for the Download gcp_confirmed.txt button — matches the GCP list summary colour. */
+    public get confirmedBtnClass(): string {
+        if (!this.storage.hasPipelineEstimates) return 'btn-success';
+        const n = this.top7ConfirmedCount;
+        if (n >= ExportConfigComponent.CONFIRMED_GREEN) return 'btn-success';
+        if (n >= ExportConfigComponent.CONFIRMED_AMBER) return 'btn-warning';
+        return 'btn-danger';
     }
 
     public exportImgName(imgName: string): string{

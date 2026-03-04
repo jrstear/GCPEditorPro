@@ -1,4 +1,11 @@
 <div class="form-row mt-2">
+    <div class="col-md-auto d-flex align-items-center" *ngIf="zoomView && storage.hasPipelineEstimates">
+        <span class="badge badge-pill px-2 py-1"
+              [ngClass]="gcpBadgeClass"
+              title="{{confirmedCount}} confirmed / {{rawImages.length}} total images for this GCP (≥7 = green)">
+            {{confirmedCount}} / {{rawImages.length}}
+        </span>
+    </div>
     <div class="col">
         <div class="custom-file">
             <input type="file" class="custom-file-input" #imagesUpload (change)="imagesSelected($event)"

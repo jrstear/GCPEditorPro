@@ -190,7 +190,8 @@ export class LoadConfigTxtComponent implements OnInit {
 
             this.txtParseResult = {
                 descriptor: this.descriptor,
-                errors: []
+                errors: [],
+                hasPipelineEstimates: this.storageService.hasPipelineEstimates
             };
 
             this.extras = this.utilsService.generateExtrasNames(this.descriptor.imageGcps);
@@ -206,6 +207,7 @@ export class LoadConfigTxtComponent implements OnInit {
         this.storageService.gcps = this.txtParseResult.descriptor.gcps;
         this.storageService.prevNames = {};
         this.storageService.imageGcps = [...this.txtParseResult.descriptor.imageGcps];
+        this.storageService.hasPipelineEstimates = this.txtParseResult.hasPipelineEstimates ?? false;
         this.router.navigateByUrl('/gcps-map');
     }
 

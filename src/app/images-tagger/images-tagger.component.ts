@@ -54,9 +54,23 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
     @ViewChild('imagesUpload') imagesUpload: ElementRef;
     @ViewChildren('smartImage') smartImages:QueryList<SmartimageComponent>;
 
+    private static readonly CONFIRMED_GREEN = 7;
+    private static readonly CONFIRMED_AMBER = 3;
+
+    public get confirmedCount(): number {
+        return this.rawImages.filter(d => d.image.confirmed).length;
+    }
+
+    public get gcpBadgeClass(): string {
+        const n = this.confirmedCount;
+        if (n >= ImagesTaggerComponent.CONFIRMED_GREEN) return 'badge-success';
+        if (n >= ImagesTaggerComponent.CONFIRMED_AMBER) return 'badge-warning';
+        return 'badge-danger';
+    }
+
     constructor(private router: Router,
         private route: ActivatedRoute,
-        private storage: StorageService,
+        public storage: StorageService,
         private sanitizer: DomSanitizer,
         private appRef: ApplicationRef,
         private modalService: NgbModal,
