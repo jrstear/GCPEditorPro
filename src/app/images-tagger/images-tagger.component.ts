@@ -125,6 +125,11 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
     
         this.images = [];
 
+        // Auto-enable zoom view for pipeline-generated files (hasPipelineEstimates=true).
+        // Overrides localStorage so the user always lands in zoom view on pipeline files,
+        // even if they previously toggled it off on a different GCP.
+        if (this.storage.hasPipelineEstimates) this.zoomView = true;
+
         this.gcp = matches[0];
 
         // console.log("Using projection: ", this.storage.projection);
