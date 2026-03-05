@@ -7,8 +7,8 @@
             <div *ngIf="storage.hasPipelineEstimates"
                  class="px-3 py-2 border-bottom small font-weight-bold"
                  [ngClass]="summaryTextClass"
-                 title="Top {{top7Total}} GCPs are the structurally most important (file order). Tag ≥7 images each to reach green.">
-                {{top7ConfirmedCount}} / {{top7Total}} top GCPs sufficiently tagged
+                 title="GCP-* control points (file order). Tag ≥7 images each to reach green.">
+                {{gcpControlConfirmedCount}} / {{gcpControlTotal}} GCPs sufficiently tagged
             </div>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item" *ngFor="let gcpMark of gcps" (click)="select(gcpMark)" (dblclick)="editImages(gcpMark.gcp)"

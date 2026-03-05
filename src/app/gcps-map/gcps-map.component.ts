@@ -23,17 +23,16 @@ export class GcpsMapComponent implements OnInit {
     public selectedGCP: GcpInfo = null;
     public isReady: boolean;
 
-    private static readonly TOP_GCP_COUNT = 7;
     private static readonly CONFIRMED_GREEN = 7;
     private static readonly CONFIRMED_AMBER = 3;
 
-    public get top7Total(): number {
-        return Math.min(this.gcps.length, GcpsMapComponent.TOP_GCP_COUNT);
+    public get gcpControlTotal(): number {
+        return this.gcps.filter(g => g.gcp.name.startsWith('GCP-')).length;
     }
 
-    public get top7ConfirmedCount(): number {
-        return this.gcps.slice(0, GcpsMapComponent.TOP_GCP_COUNT)
-            .filter(g => g.confirmedCount >= GcpsMapComponent.CONFIRMED_GREEN).length;
+    public get gcpControlConfirmedCount(): number {
+        return this.gcps.filter(g => g.gcp.name.startsWith('GCP-') &&
+            g.confirmedCount >= GcpsMapComponent.CONFIRMED_GREEN).length;
     }
 
     public gcpBadgeClass(confirmedCount: number): string {
@@ -43,7 +42,7 @@ export class GcpsMapComponent implements OnInit {
     }
 
     public get summaryTextClass(): string {
-        const n = this.top7ConfirmedCount;
+        const n = this.gcpControlConfirmedCount;
         if (n >= GcpsMapComponent.CONFIRMED_GREEN) return 'text-success';
         if (n >= GcpsMapComponent.CONFIRMED_AMBER) return 'text-warning';
         return 'text-danger';
@@ -110,8 +109,7 @@ export class GcpsMapComponent implements OnInit {
             const elevation = isNaN(item.elevation) ? "None" : item.elevation;
             const isChk = typeof item.name === "string" && item.name.startsWith("CHK-");
             const isTopGcp = this.storage.hasPipelineEstimates &&
-                !isChk &&
-                gcpIndex < GcpsMapComponent.TOP_GCP_COUNT;
+                typeof item.name === "string" && item.name.startsWith("GCP-");
 
             // Pre-compute confirmed count for icon colour (GcpInfo not yet built).
             const confirmedForIcon = this.storage.imageGcps !== null
