@@ -193,6 +193,14 @@ export class GcpsUtilsService {
             imgGcp.confidence = row[7]?.trim() || 'unknown';
             imgGcp.confirmed = imgGcp.confidence === 'mouse_click';
 
+            // Column 8 is the optional marker_bbox field (format: "x1,y1,x2,y2").
+            if (row.length > 8 && row[8]?.trim()) {
+                const parts = row[8].trim().split(',').map(s => parseInt(s, 10));
+                if (parts.length === 4 && parts.every(n => !isNaN(n))) {
+                    imgGcp.markerBbox = { x1: parts[0], y1: parts[1], x2: parts[2], y2: parts[3] };
+                }
+            }
+
             // Let's take the rest of the array (columns 8+)
             imgGcp.extras = row.slice(8);
 
@@ -471,6 +479,9 @@ export class ImageGcp {
 
     /** True when the user has shift-clicked to confirm this pixel estimate. */
     public confirmed?: boolean;
+
+    /** Bounding box of the detected marker in full-image pixel coordinates (optional, from pipeline col 8). */
+    public markerBbox?: { x1: number; y1: number; x2: number; y2: number } | null;
 }
 
 export function exportImgName(imgName: string): string{

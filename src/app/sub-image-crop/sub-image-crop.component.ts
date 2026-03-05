@@ -46,6 +46,8 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
     @Input() confirmed: boolean;
     @Input() hasEstimate: boolean;
     @Input() isSelected: boolean;
+    /** Optional bounding box of the detected marker; drives adaptive zoom when present. */
+    @Input() markerBbox: { x1: number; y1: number; x2: number; y2: number } | null = null;
     /** Emits full-image pixel coords when user clicks in the crop canvas. */
     @Output() clickPosition = new EventEmitter<{x: number, y: number}>();
 
@@ -100,27 +102,48 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
         canvas.getContext('2d').clearRect(0, 0, CROP, CROP);
     }
 
+    /** Compute the source region to draw from the full image into the CROP×CROP canvas. */
+    private _getSourceRect(): { sx: number; sy: number; sw: number; sh: number } {
+        const cx = this.imX || 0;
+        const cy = this.imY || 0;
+        const nw = this._img.naturalWidth;
+        const nh = this._img.naturalHeight;
+
+        if (this.markerBbox) {
+            const bw = this.markerBbox.x2 - this.markerBbox.x1;
+            const bh = this.markerBbox.y2 - this.markerBbox.y1;
+            const pad = Math.max(bw, bh) * 0.1;
+            const dim = Math.max(bw + 2 * pad, bh + 2 * pad);
+            const sw = Math.min(dim, nw);
+            const sh = Math.min(dim, nh);
+            const sx = Math.max(0, Math.min(cx - dim / 2, nw - sw));
+            const sy = Math.max(0, Math.min(cy - dim / 2, nh - sh));
+            return { sx, sy, sw, sh };
+        }
+
+        const half = CROP / 2;
+        const sx = Math.max(0, Math.min(cx - half, nw - CROP));
+        const sy = Math.max(0, Math.min(cy - half, nh - CROP));
+        return { sx, sy, sw: CROP, sh: CROP };
+    }
+
     private _draw() {
         const canvas = this.canvasRef?.nativeElement;
         if (!canvas || !this._img) return;
 
         const ctx = canvas.getContext('2d');
-        const half = CROP / 2;
         const cx = this.imX || 0;
         const cy = this.imY || 0;
-
-        // Clamp source rect to image bounds
-        const sx = Math.max(0, Math.min(cx - half, this._img.naturalWidth  - CROP));
-        const sy = Math.max(0, Math.min(cy - half, this._img.naturalHeight - CROP));
+        const { sx, sy, sw, sh } = this._getSourceRect();
 
         ctx.clearRect(0, 0, CROP, CROP);
-        ctx.drawImage(this._img, sx, sy, CROP, CROP, 0, 0, CROP, CROP);
+        ctx.drawImage(this._img, sx, sy, sw, sh, 0, 0, CROP, CROP);
 
         // Draw crosshair.png at GCP position within crop.
         // Yellow (no filter) = unconfirmed estimate; green filter = confirmed.
         if (this.hasEstimate || this.confirmed) {
-            const px = cx - sx;
-            const py = cy - sy;
+            const px = (cx - sx) * (CROP / sw);
+            const py = (cy - sy) * (CROP / sh);
             const drawCrosshair = () => {
                 ctx.drawImage(CROSSHAIR_IMG, px - CROSSHAIR_SIZE / 2, py - CROSSHAIR_SIZE / 2, CROSSHAIR_SIZE, CROSSHAIR_SIZE);
             };
@@ -134,9 +157,10 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
 
     public onCanvasClick(e: MouseEvent): void {
         if (!this._img) return;
-        const half = CROP / 2;
-        const sx = Math.max(0, Math.min(this.imX - half, this._img.naturalWidth  - CROP));
-        const sy = Math.max(0, Math.min(this.imY - half, this._img.naturalHeight - CROP));
-        this.clickPosition.emit({ x: sx + e.offsetX, y: sy + e.offsetY });
+        const { sx, sy, sw, sh } = this._getSourceRect();
+        this.clickPosition.emit({
+            x: sx + e.offsetX * (sw / CROP),
+            y: sy + e.offsetY * (sh / CROP),
+        });
     }
 }

@@ -31,7 +31,13 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
     /** When true, zoom/pan the image to fit its container on each load. Use in fixed-size panels. */
     @Input() public autoFit: boolean = false;
     /** Crop-box to draw on the large image (matches the selected sub-image crop). */
-    @Input() public cropBox: { imX: number, imY: number, color: string } | null = null;
+    @Input() public cropBox: { imX: number; imY: number; color: string; sourceSize?: number } | null = null;
+    /**
+     * When set, zoom the image to match the sub-image crop scale (same pixels-per-display-pixel)
+     * and pan to center the given source coordinate, clamped to avoid black bars.
+     * Takes priority over autoFit.
+     */
+    @Input() public cropFocus: { x: number; y: number; pixelsPerPx: number } | null = null;
     @ViewChild('img') img: ElementRef;
     @ViewChild('pin') pinDiv: ElementRef;
     @ViewChild('msg') msgDiv: ElementRef;
@@ -51,11 +57,16 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
         if (changes['cropBox']) {
             this.syncCropBox();
         }
+        // NOTE: cropFocus is intentionally NOT handled here to avoid an infinite
+        // zone.js loop (new object reference each call → ngOnChanges → panzoom event
+        // → zone detects change → repeat). Focus is applied in _updateView(), called
+        // from onLoad() and from onResize(). When [src] changes (user selects a
+        // different image), onLoad fires and picks up the current cropFocus value.
     }
 
     @HostListener('window:resize', ['$event'])
     onResize(event) {
-        if (this.autoFit) this._fitToContainer();
+        this._updateView();
         this.syncPinPosition();
         this.syncCropBox();
     }
@@ -157,7 +168,7 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
 
         // Fit image to container on every load (handles src changes + initial load)
         const onLoad = () => {
-            if (this.autoFit) this._fitToContainer();
+            this._updateView();
             this.syncPinPosition();
             this.syncCropBox();
         };
@@ -169,7 +180,7 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
 
         this.onSmartImagesLayoutChanged = () => {
             setTimeout(() => {
-                if (this.autoFit) this._fitToContainer();
+                this._updateView();
                 this.syncPinPosition();
                 this.syncCropBox();
             }, 250);
@@ -218,13 +229,13 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
         const zoom = this.panzoom.getScale();
         const scaleX = (rect.width / zoom) / nw;
         const scaleY = (rect.height / zoom) / nh;
-        const CROP = 256;
-        const sx = Math.max(0, Math.min(this.cropBox.imX - CROP / 2, nw - CROP));
-        const sy = Math.max(0, Math.min(this.cropBox.imY - CROP / 2, nh - CROP));
+        const dim = this.cropBox.sourceSize ?? 256;
+        const sx = Math.max(0, Math.min(this.cropBox.imX - dim / 2, nw - dim));
+        const sy = Math.max(0, Math.min(this.cropBox.imY - dim / 2, nh - dim));
         div.style.left   = ((rect.left - parentRect.left) + sx * scaleX * zoom) + 'px';
         div.style.top    = ((rect.top  - parentRect.top)  + sy * scaleY * zoom) + 'px';
-        div.style.width  = (CROP * scaleX * zoom) + 'px';
-        div.style.height = (CROP * scaleY * zoom) + 'px';
+        div.style.width  = (dim * scaleX * zoom) + 'px';
+        div.style.height = (dim * scaleY * zoom) + 'px';
         div.style.borderColor = this.cropBox.color;
         div.style.display = 'block';
     }
@@ -262,6 +273,73 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
     }
 
     ngOnInit(): void {
+    }
+
+    private _updateView(): void {
+        if (this.cropFocus) {
+            this._focusCrop(this.cropFocus.x, this.cropFocus.y, this.cropFocus.pixelsPerPx);
+        } else if (this.autoFit) {
+            this._fitToContainer();
+        }
+    }
+
+    /**
+     * Zoom to match the sub-image crop scale (pixelsPerPx = display pixels per source pixel),
+     * then pan to center source coord (x, y), clamped so no black bars appear.
+     */
+    private _focusCrop(x: number, y: number, pixelsPerPx: number): void {
+        const img = this.img.nativeElement;
+        const nw = img.naturalWidth;
+        const nh = img.naturalHeight;
+        if (!nw || !nh || !this.panzoom) return;
+        const container = this.el.nativeElement;
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        if (!cw || !ch) return;
+
+        // Set CSS size to fit-to-container base (same as _fitToContainer)
+        const s = Math.min(cw / nw, ch / nh);
+        const fw = Math.round(nw * s);
+        const fh = Math.round(nh * s);
+        img.style.maxWidth = 'none';
+        img.style.maxHeight = 'none';
+        img.style.width = `${fw}px`;
+        img.style.height = `${fh}px`;
+
+        // Panzoom scale to achieve the desired pixels-per-source-pixel ratio
+        const S = pixelsPerPx / s;
+
+        // Panzoom uses: transform: scale(S) translate(Tx, Ty)
+        // with transform-origin at element center (fw/2, fh/2).
+        // Element CSS point (px, py) renders at container position:
+        //   rendered_x = S*(px - fw/2 + Tx) + fw/2
+        // Source pixel (x, y) is at element CSS position (x*s, y*s).
+        // Setting rendered_x = cw/2 for px = x*s gives:
+        //   Tx = (cw - fw)/(2*S) + fw/2 - x*s
+        const Tx = (cw - fw) / (2 * S) + fw / 2 - x * s;
+        const Ty = (ch - fh) / (2 * S) + fh / 2 - y * s;
+
+        // Clamp to prevent black bars when image is larger than container.
+        // Bounds derived by setting rendered left/right image edge to container edge.
+        let panX: number;
+        let panY: number;
+        if (fw * S >= cw) {
+            const txMax = fw * (S - 1) / (2 * S);           // image left at container left edge
+            const txMin = (2 * cw - fw) / (2 * S) - fw / 2; // image right at container right edge
+            panX = Math.min(txMax, Math.max(txMin, Tx));
+        } else {
+            panX = (cw - fw) / (2 * S);  // center image horizontally
+        }
+        if (fh * S >= ch) {
+            const tyMax = fh * (S - 1) / (2 * S);
+            const tyMin = (2 * ch - fh) / (2 * S) - fh / 2;
+            panY = Math.min(tyMax, Math.max(tyMin, Ty));
+        } else {
+            panY = (ch - fh) / (2 * S);  // center image vertically
+        }
+
+        this.panzoom.zoom(S, { animate: false });
+        this.panzoom.pan(panX, panY, { animate: false });
     }
 
     private _fitToContainer(): void {

@@ -69,6 +69,7 @@
                 [confirmed]="desc.image.confirmed"
                 [hasEstimate]="desc.isTagged"
                 [isSelected]="desc === selectedDesc"
+                [markerBbox]="desc.image.markerBbox"
                 (clickPosition)="pinFromSubImage($event, desc)">
             </app-sub-image-crop>
         </div>
@@ -86,7 +87,8 @@
             [pinLocation]="selectedDesc.pinLocation"
             [pinColor]="selectedDesc.image.confirmed ? 'green' : 'yellow'"
             [cropBox]="getCropBox(selectedDesc)"
-            [autoFit]="true"
+            [cropFocus]="getCropFocus(selectedDesc)"
+            [autoFit]="!getCropFocus(selectedDesc)"
             (pin)="pin($event, selectedDesc)"
             style="display: block; overflow: hidden; width: 100%; flex: 1; min-height: 0;">
         </app-smartimage>

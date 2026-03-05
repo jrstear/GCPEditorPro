@@ -174,7 +174,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
             var coord = img.getCoords();
 
             if (res) {
-                
+
                 obj = {
                     image: {
                         gcpName: this.gcp.name,
@@ -186,7 +186,8 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                         imgName: img.name,
                         confirmed: res.confirmed ?? (res.confidence === 'mouse_click'),
                         confidence: res.confidence,
-                        extras: res.extras || []
+                        extras: res.extras || [],
+                        markerBbox: res.markerBbox || null,
                     },
                     isTagged: res.imX !== 0 && res.imY !== 0,
                     pinLocation: { x: res.imX, y: res.imY },
@@ -245,13 +246,32 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         return this.storage.getImageUrl(name);
     }
 
-    public getCropBox(desc: ImageDescriptor): { imX: number, imY: number, color: string } | null {
+    public getCropBox(desc: ImageDescriptor): { imX: number; imY: number; color: string; sourceSize?: number } | null {
         if (!desc || !desc.isTagged) return null;
-        return {
+        const result: { imX: number; imY: number; color: string; sourceSize?: number } = {
             imX: desc.image.imX,
             imY: desc.image.imY,
             color: desc.image.confirmed ? '#28a745' : '#ffc107',
         };
+        if (desc.image.markerBbox) {
+            const bb = desc.image.markerBbox;
+            const bw = bb.x2 - bb.x1;
+            const bh = bb.y2 - bb.y1;
+            const pad = Math.max(bw, bh) * 0.1;
+            result.sourceSize = Math.max(bw + 2 * pad, bh + 2 * pad);
+        }
+        return result;
+    }
+
+    /** Returns the zoom-focus parameters for the right panel based on the marker bbox, or null to use autoFit. */
+    public getCropFocus(desc: ImageDescriptor): { x: number; y: number; pixelsPerPx: number } | null {
+        if (!desc || !desc.isTagged || !desc.image.markerBbox) return null;
+        const bb = desc.image.markerBbox;
+        const bw = bb.x2 - bb.x1;
+        const bh = bb.y2 - bb.y1;
+        const pad = Math.max(bw, bh) * 0.1;
+        const dim = Math.max(bw + 2 * pad, bh + 2 * pad);
+        return { x: desc.image.imX, y: desc.image.imY, pixelsPerPx: 256 / dim };
     }
 
     public toggleZoomView() {
