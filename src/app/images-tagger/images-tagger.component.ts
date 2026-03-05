@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ApplicationRef, TemplateRef, ViewChildren, QueryList } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, ApplicationRef, TemplateRef, ViewChildren, QueryList, HostListener } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { StorageService } from '../storage.service';
 import { ImageGcp, GCP } from '../gcps-utils.service';
@@ -184,7 +184,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                         imX: res.imX,
                         imY: res.imY,
                         imgName: img.name,
-                        confirmed: res.confirmed ?? (res.confidence === 'mouse_click'),
+                        confirmed: res.confirmed ?? (res.confidence === 'confirmed' || res.confidence === 'mouse_click'),
                         confidence: res.confidence,
                         extras: res.extras || [],
                         markerBbox: res.markerBbox || null,
@@ -484,7 +484,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         desc.image.imX = location.x;
         desc.image.imY = location.y;
         desc.image.confirmed = true;
-        desc.image.confidence = 'mouse_click';
+        desc.image.confidence = 'confirmed';
         desc.pinLocation = location;
     }
 
@@ -628,6 +628,22 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
         this.setProgress("", 1, true);
 
+    }
+
+    @HostListener('window:keydown', ['$event'])
+    onKeyDown(e: KeyboardEvent) {
+        if (e.code !== 'Space') return;
+        if (!this.zoomView || !this.selectedDesc?.isTagged) return;
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return;
+        e.preventDefault();
+        this.pin({ x: this.selectedDesc.image.imX, y: this.selectedDesc.image.imY }, this.selectedDesc);
+        // Advance to next unconfirmed-tagged image, then first unconfirmed, then stay.
+        const idx = this.images.indexOf(this.selectedDesc);
+        const next =
+            this.images.slice(idx + 1).find(d => d.isTagged && !d.image.confirmed) ??
+            this.images.find(d => d.isTagged && !d.image.confirmed) ??
+            null;
+        if (next) this.selectedDesc = next;
     }
 
     public requestedInterrupt: boolean = false;

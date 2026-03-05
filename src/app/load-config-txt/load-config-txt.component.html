@@ -117,6 +117,7 @@
             <th>ImageY</th>
             <th>Filename</th>
             <th>GCP Label</th>
+            <th>Confidence</th>
             <th *ngFor="let extra of extras">
                 {{extra}}
             </th>
@@ -153,6 +154,9 @@
             </td>
             <td>
                 {{ imgGcp.gcpName }}
+            </td>
+            <td>
+                {{ imgGcp.confidence }}
             </td>
             <td *ngFor="let extra of imgGcp.extras">
                 {{extra}}

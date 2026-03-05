@@ -188,10 +188,11 @@ export class GcpsUtilsService {
 
             }
 
-            // Column 7 is the confidence field (e.g. "projection", "mouse_click").
+            // Column 7 is the confidence field (e.g. "projection", "confirmed").
             // Default to "unknown" if absent (older files without the column).
+            // "mouse_click" is the legacy name for "confirmed" — accept both.
             imgGcp.confidence = row[7]?.trim() || 'unknown';
-            imgGcp.confirmed = imgGcp.confidence === 'mouse_click';
+            imgGcp.confirmed = imgGcp.confidence === 'confirmed' || imgGcp.confidence === 'mouse_click';
 
             // Column 8 is the optional marker_bbox field (format: "x1,y1,x2,y2").
             if (row.length > 8 && row[8]?.trim()) {
@@ -475,7 +476,7 @@ export class ImageGcp {
 
     public extras: string[];
 
-    /** Confidence level: "projection" (pipeline estimate), "mouse_click" (user-positioned), "unknown" (legacy). */
+    /** Confidence level: "projection" (pipeline estimate), "confirmed" (user-positioned), "unknown" (legacy). "mouse_click" accepted as legacy alias for "confirmed". */
     public confidence?: string;
 
     /** True when the user has shift-clicked to confirm this pixel estimate. */
