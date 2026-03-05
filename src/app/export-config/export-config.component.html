@@ -1,10 +1,5 @@
 <div class="row">
     <div class="col-md-12">
-        <div class="alert alert-info">
-            <fa-icon icon="info-circle" class="mr-2"></fa-icon>
-            <strong>gcp_list.txt</strong> saves all rows and can be reloaded to resume work.
-            <strong>gcp_confirmed.txt</strong> saves only your confirmed tags and is ready for upload to WebODM/ODM.
-        </div>
         <div class="card my-3">
             <div class="card-body py-3">
                 <pre class="my-0 py-0"><strong>Coordinate Reference System:</strong>&nbsp;{{ projection.to_str() }}</pre>
@@ -20,6 +15,7 @@
                     <th>ImageY</th>
                     <th>Filename</th>
                     <th>GCP Label</th>
+                    <th>Confidence</th>
                     <th *ngFor="let extra of extras">
                         {{extra}}
                     </th>
@@ -54,6 +50,9 @@
                     <td>
                         {{ imgGcp.gcpName }}
                     </td>
+                    <td>
+                        {{ imgGcp.confidence }}
+                    </td>
                     <td *ngFor="let extra of imgGcp.extras">
                         {{extra}}
                     </td>
@@ -62,22 +61,53 @@
         </table>
     </div>
 </div>
-<div class="fixed-bottom bg-white d-flex justify-content-between align-items-center">
-    <button class="btn btn-primary ml-3 my-3" (click)="back()">
-        <fa-icon icon="long-arrow-alt-left" class="mr-2"></fa-icon>Back
-    </button>
-    <div class="mr-3 my-3 d-flex align-items-center">
-        <button class="btn btn-secondary mr-2" (click)="exportTxt()">
-            <fa-icon icon="download" class="mr-2"></fa-icon>Download gcp_list.txt
+<div class="fixed-bottom bg-white border-top">
+    <div class="alert alert-info mb-0 py-2 px-3 border-bottom small">
+        <fa-icon icon="info-circle" class="mr-2"></fa-icon>
+        <strong>gcp_list.txt</strong> saves all rows and can be reloaded to resume work.
+        <strong>gcp_confirmed.txt</strong> saves confirmed GCP-* control point tags for ODM bundle adjustment.
+        <strong>chk_confirmed.txt</strong> saves confirmed CHK-* check point tags for post-processing accuracy validation.
+    </div>
+    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+        <button class="btn btn-primary" (click)="back()">
+            <fa-icon icon="long-arrow-alt-left" class="mr-2"></fa-icon>Back
         </button>
-        <button class="btn" [ngClass]="confirmedBtnClass" (click)="exportConfirmed()" [title]="confirmedCount + ' confirmed tags'">
-            <fa-icon icon="download" class="mr-2"></fa-icon>Download gcp_confirmed.txt
-            <span *ngIf="storage.hasPipelineEstimates"
-                  class="badge badge-light ml-1"
-                  title="{{top7ConfirmedCount}} of {{top7Total}} top GCPs have ≥7 confirmed images">
-                {{top7ConfirmedCount}}/{{top7Total}} GCPs
-            </span>
-            <span class="badge badge-light ml-1">{{ confirmedCount }} images</span>
-        </button>
+        <div class="d-flex align-items-center">
+            <button class="btn btn-secondary mr-2" (click)="exportTxt()">
+                <fa-icon icon="download" class="mr-2"></fa-icon>Download gcp_list.txt
+            </button>
+            <!-- Pipeline file: separate control and check downloads -->
+            <ng-container *ngIf="storage.hasPipelineEstimates">
+                <button class="btn mr-2" [ngClass]="controlBtnClass"
+                        [disabled]="gcpControlImageCount === 0"
+                        (click)="exportControl()"
+                        title="Confirmed GCP-* control point tags for ODM bundle adjustment">
+                    <fa-icon icon="download" class="mr-2"></fa-icon>Download gcp_confirmed.txt
+                    <span class="badge badge-light ml-1"
+                          title="{{gcpControlConfirmedCount}} of {{gcpControlTotal}} GCP-* points have ≥7 confirmed images">
+                        {{gcpControlConfirmedCount}}/{{gcpControlTotal}} GCP-*
+                    </span>
+                    <span class="badge badge-light ml-1">{{gcpControlImageCount}} images</span>
+                </button>
+                <button class="btn" [ngClass]="checkBtnClass"
+                        [disabled]="gcpCheckImageCount === 0"
+                        (click)="exportCheck()"
+                        title="Confirmed CHK-* check point tags for post-processing RMSE validation">
+                    <fa-icon icon="download" class="mr-2"></fa-icon>Download chk_confirmed.txt
+                    <span class="badge badge-light ml-1"
+                          title="{{gcpCheckConfirmedCount}} of {{gcpCheckTotal}} CHK-* points have ≥7 confirmed images">
+                        {{gcpCheckConfirmedCount}}/{{gcpCheckTotal}} CHK-*
+                    </span>
+                    <span class="badge badge-light ml-1">{{gcpCheckImageCount}} images</span>
+                </button>
+            </ng-container>
+            <!-- Standard file: single confirmed download -->
+            <button *ngIf="!storage.hasPipelineEstimates" class="btn btn-success"
+                    (click)="exportConfirmed()"
+                    [title]="confirmedCount + ' confirmed tags'">
+                <fa-icon icon="download" class="mr-2"></fa-icon>Download gcp_confirmed.txt
+                <span class="badge badge-light ml-1">{{confirmedCount}} images</span>
+            </button>
+        </div>
     </div>
 </div>

@@ -42,72 +42,119 @@ export class ExportConfigComponent implements OnInit {
         window.dispatchEvent(new CustomEvent('enterLicense'));
     }
 
-    private getTxtContent(confirmedOnly = false): string {
-
+    private getTxtContent(filter?: (img: ImageGcp) => boolean): string {
         let content = this.projection.to_str() + '\n';
-
-        const rows = confirmedOnly ? this.imageGcps.filter(img => img.confirmed) : this.imageGcps;
+        const rows = filter ? this.imageGcps.filter(filter) : this.imageGcps;
         for (const img of rows) {
             const conf = img.confidence || 'unknown';
             content += `${img.geoX}\t${img.geoY}\t${img.geoZ}\t${img.imX}\t${img.imY}\t${exportImgName(img.imgName)}\t${img.gcpName}\t${conf}\t${img.extras.join('\t')}`.trim() + '\n';
         }
-
         return content;
     }
 
-    private static readonly TOP_GCP_COUNT = 7;
     private static readonly CONFIRMED_GREEN = 7;
     private static readonly CONFIRMED_AMBER = 3;
 
+    /** Confirmed image rows (for non-pipeline confirmed download). */
     public get confirmedCount(): number {
         return this.imageGcps.filter(img => img.confirmed).length;
     }
 
-    public get top7Total(): number {
-        return Math.min(this.gcps.length, ExportConfigComponent.TOP_GCP_COUNT);
+    // --- GCP-* (control) counts ---
+
+    public get gcpControlTotal(): number {
+        return this.gcps.filter(g => g.name.startsWith('GCP-')).length;
     }
 
-    /** Number of top-7 GCPs that have reached the green threshold (≥7 confirmed images). */
-    public get top7ConfirmedCount(): number {
-        return this.gcps.slice(0, ExportConfigComponent.TOP_GCP_COUNT).filter(gcp => {
-            const n = this.imageGcps.filter(ig => ig.gcpName === gcp.name && ig.confirmed).length;
-            return n >= ExportConfigComponent.CONFIRMED_GREEN;
-        }).length;
+    /** GCP-* points with ≥CONFIRMED_GREEN confirmed images. */
+    public get gcpControlConfirmedCount(): number {
+        return this.gcps.filter(g => g.name.startsWith('GCP-') &&
+            this.imageGcps.filter(ig => ig.gcpName === g.name && ig.confirmed).length
+                >= ExportConfigComponent.CONFIRMED_GREEN
+        ).length;
     }
 
-    /** Bootstrap button class for the Download gcp_confirmed.txt button — matches the GCP list summary colour. */
-    public get confirmedBtnClass(): string {
-        if (!this.storage.hasPipelineEstimates) return 'btn-success';
-        const n = this.top7ConfirmedCount;
+    /** Confirmed image rows for GCP-* points. */
+    public get gcpControlImageCount(): number {
+        return this.imageGcps.filter(ig => ig.confirmed && ig.gcpName.startsWith('GCP-')).length;
+    }
+
+    public get controlBtnClass(): string {
+        const n = this.gcpControlConfirmedCount;
         if (n >= ExportConfigComponent.CONFIRMED_GREEN) return 'btn-success';
         if (n >= ExportConfigComponent.CONFIRMED_AMBER) return 'btn-warning';
         return 'btn-danger';
     }
 
-    public exportImgName(imgName: string): string{
+    // --- CHK-* (check) counts ---
+
+    public get gcpCheckTotal(): number {
+        return this.gcps.filter(g => g.name.startsWith('CHK-')).length;
+    }
+
+    /** CHK-* points with ≥CONFIRMED_GREEN confirmed images. */
+    public get gcpCheckConfirmedCount(): number {
+        return this.gcps.filter(g => g.name.startsWith('CHK-') &&
+            this.imageGcps.filter(ig => ig.gcpName === g.name && ig.confirmed).length
+                >= ExportConfigComponent.CONFIRMED_GREEN
+        ).length;
+    }
+
+    /** Confirmed image rows for CHK-* points. */
+    public get gcpCheckImageCount(): number {
+        return this.imageGcps.filter(ig => ig.confirmed && ig.gcpName.startsWith('CHK-')).length;
+    }
+
+    public get checkBtnClass(): string {
+        const n = this.gcpCheckConfirmedCount;
+        if (n >= ExportConfigComponent.CONFIRMED_GREEN) return 'btn-success';
+        if (n >= ExportConfigComponent.CONFIRMED_AMBER) return 'btn-warning';
+        return 'btn-danger';
+    }
+
+    public exportImgName(imgName: string): string {
         return exportImgName(imgName);
     }
 
     public exportTxt() {
-        if (this.storage.getLicense().demo){
+        if (this.storage.getLicense().demo) {
             window.dispatchEvent(new CustomEvent('enterLicense'));
             return;
         }
-
         const content = this.getTxtContent();
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         FileSaver.saveAs(blob, 'gcp_list.txt');
     }
 
+    /** Non-pipeline fallback: all confirmed rows in one file. */
     public exportConfirmed() {
         if (this.storage.getLicense().demo) {
             window.dispatchEvent(new CustomEvent('enterLicense'));
             return;
         }
-
-        const content = this.getTxtContent(true);
+        const content = this.getTxtContent(ig => ig.confirmed);
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         FileSaver.saveAs(blob, 'gcp_confirmed.txt');
+    }
+
+    public exportControl() {
+        if (this.storage.getLicense().demo) {
+            window.dispatchEvent(new CustomEvent('enterLicense'));
+            return;
+        }
+        const content = this.getTxtContent(ig => ig.confirmed && ig.gcpName.startsWith('GCP-'));
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        FileSaver.saveAs(blob, 'gcp_confirmed.txt');
+    }
+
+    public exportCheck() {
+        if (this.storage.getLicense().demo) {
+            window.dispatchEvent(new CustomEvent('enterLicense'));
+            return;
+        }
+        const content = this.getTxtContent(ig => ig.confirmed && ig.gcpName.startsWith('CHK-'));
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        FileSaver.saveAs(blob, 'chk_confirmed.txt');
     }
 
     public back() {

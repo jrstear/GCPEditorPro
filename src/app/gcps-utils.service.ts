@@ -399,12 +399,13 @@ export class GcpsUtilsService {
     }
 
     public generateExtrasNames(imageGcps: ImageGcp[]): string[] {
-        // Let's generate the array of extras headers
+        // Known column names for extras (col 8 = marker_bbox).
+        // Beyond the known names, fall back to extra3, extra4, etc.
+        const KNOWN = ['Marker Bbox'];
         const extrasCount = Math.max(...imageGcps.map(item => item.extras.length));
-
         const extras = [];
         for (let n = 0; n < extrasCount; n++) {
-            extras.push('extra' + (n + 1));
+            extras.push(n < KNOWN.length ? KNOWN[n] : 'extra' + (n + 1));
         }
         return extras;
     }
