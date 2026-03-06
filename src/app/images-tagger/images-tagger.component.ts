@@ -459,9 +459,16 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
         // Save in storage. Use rawImages (not the distance-filtered this.images)
         // so that tagged images outside the current filter radius are not silently dropped.
-        const tmp = this.storage.imageGcps.filter(img => img.gcpName !== this.gcp.name);
+        //
+        // Preserve the global GCP ordering from emlid2gcp.py: find the first row
+        // for this GCP BEFORE filtering it out, then splice the updated rows back
+        // at that same position (not at the end).
+        const gcpName = this.gcp.name;
+        const firstIdx = this.storage.imageGcps.findIndex(ig => ig.gcpName === gcpName);
+        const tmp = this.storage.imageGcps.filter(img => img.gcpName !== gcpName);
+        const insertAt = firstIdx >= 0 ? firstIdx : tmp.length;
 
-        tmp.push(...this.rawImages.filter(item => item.isTagged).map(itm => itm.image));
+        tmp.splice(insertAt, 0, ...this.rawImages.filter(item => item.isTagged).map(itm => itm.image));
 
         this.storage.imageGcps = tmp;
 
