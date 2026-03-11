@@ -111,10 +111,26 @@ input {
         display: flex;
         flex-direction: column;
         background: #222;
+        position: relative;
 
         .full-image-header {
             background: #fff;
             flex-shrink: 0;
+        }
+
+        .large-image-compass {
+            position: absolute;
+            top: 40px;
+            left: 8px;
+            z-index: 10;
+            background: rgba(0,0,0,0.45);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
         }
     }
 }

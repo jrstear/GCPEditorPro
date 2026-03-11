@@ -15,6 +15,15 @@ CROSSHAIR_IMG.src = './assets/crosshair.png';
              [class.selected]="isSelected"
              [style.borderColor]="borderColor">
             <canvas #canvas [width]="CROP" [height]="CROP" (click)="onCanvasClick($event)"></canvas>
+            <div *ngIf="heading !== null" class="compass-overlay"
+                 [title]="'Heading: ' + heading.toFixed(0) + '°'">
+                <svg viewBox="0 0 20 20" width="22" height="22"
+                     [style.transform]="'rotate(' + (-heading) + 'deg)'"
+                     style="display:block;">
+                    <polygon points="10,2 13,11 10,9 7,11" fill="#e74c3c"/>
+                    <polygon points="10,18 13,11 10,9 7,11" fill="#ccc"/>
+                </svg>
+            </div>
         </div>
         <div class="crop-label" [title]="imgName">{{imgName}}</div>
     `,
@@ -24,8 +33,22 @@ CROSSHAIR_IMG.src = './assets/crosshair.png';
             border: 3px solid #6c757d;
             display: inline-block;
             line-height: 0;
+            position: relative;
         }
         .crop-wrapper.selected { outline: 3px solid #007bff; outline-offset: 1px; }
+        .compass-overlay {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.45);
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
         canvas { display: block; }
         .crop-label {
             font-size: 10px;
@@ -48,6 +71,8 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
     @Input() isSelected: boolean;
     /** Optional bounding box of the detected marker; drives adaptive zoom when present. */
     @Input() markerBbox: { x1: number; y1: number; x2: number; y2: number } | null = null;
+    /** Camera yaw heading in degrees clockwise from north, or null if unavailable. */
+    @Input() heading: number | null = null;
     /** Emits full-image pixel coords when user clicks in the crop canvas. */
     @Output() clickPosition = new EventEmitter<{x: number, y: number}>();
     /** Emits when user shift-clicks to un-tag (revert confirmed→estimated). */

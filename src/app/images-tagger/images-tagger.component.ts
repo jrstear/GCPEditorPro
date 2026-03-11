@@ -198,6 +198,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                     estimateImX: res.imX,
                     estimateImY: res.imY,
                     estimateConfidence: res.confidence,
+                    heading: null,
                 };
             } else {
                 obj = {
@@ -226,15 +227,23 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
         this.loadImages(0);
 
-        Promise.all(this.rawImages.map(item => item.coords)).then(coords => {
+        const headingPromises = this.rawImages.map(desc => {
+            const imgInfo = imageByName.get(desc.image.imgName);
+            return imgInfo ? imgInfo.getHeading() : Promise.resolve(null);
+        });
+
+        Promise.all([
+            Promise.all(this.rawImages.map(item => item.coords)),
+            Promise.all(headingPromises),
+        ]).then(([coords, headings]) => {
             for (let i = 0; i < coords.length; i++) {
                 var coord = coords[i];
                 var item = this.rawImages[i];
 
                 if (coord) {
                     item.distance = getDistanceFromLatLonInM(this.gcpCoords.y, this.gcpCoords.x, coord.lat, coord.lng);
-                    // console.log(item.image.imgName, coord, "Distance: " + item.distance);
                 }
+                item.heading = headings[i];
             }
 
             this.filterImages();
@@ -414,6 +423,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                     estimateImX: 0,
                     estimateImY: 0,
                     estimateConfidence: null,
+                    heading: null,
                 };
 
                 newImages.push(descr);
@@ -428,15 +438,26 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
         this.loadImages(0);
 
-        Promise.all(this.rawImages.map(item => item.coords)).then(coords => {
+        const newHeadingPromises = newImages.map(desc => {
+            const imgInfo = this.storage.images.find(img => img.name === desc.image.imgName);
+            return imgInfo ? imgInfo.getHeading() : Promise.resolve(null);
+        });
+
+        Promise.all([
+            Promise.all(this.rawImages.map(item => item.coords)),
+            Promise.all(newHeadingPromises),
+        ]).then(([coords, headings]) => {
             for (let i = 0; i < coords.length; i++) {
                 var coord = coords[i];
                 var item = this.rawImages[i];
 
                 if (coord) {
                     item.distance = getDistanceFromLatLonInM(this.gcpCoords.y, this.gcpCoords.x, coord.lat, coord.lng);
-                    // console.log(item.image.imgName, coord, "Distance: " + item.distance);
                 }
+            }
+            // Apply headings only to the newly added images
+            for (let i = 0; i < newImages.length; i++) {
+                newImages[i].heading = headings[i];
             }
 
             this.filterImages();
@@ -718,5 +739,7 @@ class ImageDescriptor {
     public estimateImX: number;
     public estimateImY: number;
     public estimateConfidence: string;
+    /** Camera yaw heading in degrees clockwise from north, or null if not available. */
+    public heading: number | null;
 }
 

@@ -93,6 +93,7 @@ class ImageInfo {
     public name: string;
     public url: string | null;
     private _coords: GPSCoords;
+    private _heading: number | null = undefined;
     private _file: File;
 
     public getCoords() : Promise<GPSCoords> {
@@ -115,7 +116,18 @@ class ImageInfo {
         });
 
         return prom;
-        
+
+    }
+
+    public getHeading(): Promise<number | null> {
+        if (this._heading !== undefined) return Promise.resolve(this._heading);
+        return exifr.parse(this._file, { xmp: true })
+            .then((result: any) => {
+                const yaw = result?.GimbalYawDegree ?? result?.FlightYawDegree;
+                this._heading = typeof yaw === 'number' ? yaw : null;
+                return this._heading;
+            })
+            .catch(() => { this._heading = null; return null; });
     }
 }
 
