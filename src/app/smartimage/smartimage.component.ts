@@ -40,7 +40,6 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
     @Input() public cropFocus: { x: number; y: number; pixelsPerPx: number } | null = null;
     @ViewChild('img') img: ElementRef;
     @ViewChild('pin') pinDiv: ElementRef;
-    @ViewChild('msg') msgDiv: ElementRef;
     @ViewChild('cropBoxDiv') cropBoxDiv: ElementRef;
 
     pinLocationValue: CoordsXY = null;
@@ -50,8 +49,6 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
 
     @Output()
     pinLocationChange = new EventEmitter<CoordsXY>();
-
-    private wheelMessageTimeout: any;
 
     ngOnChanges(changes: SimpleChanges) {
         if (changes['cropBox']) {
@@ -131,40 +128,15 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
             }
         });
 
-        // this.img.nativeElement.parentElement.addEventListener('wheel', this.panzoom.zoomWithWheel);
         this.img.nativeElement.parentElement.addEventListener('wheel', (e: WheelEvent) => {
-            if (!e.shiftKey) {
-                this.displayWheelMessage();
-
-                return;
-            }
-            // When a pin is set, zoom around the GCP screen position so it stays fixed.
-            // Use zoomToPoint() which takes { clientX, clientY } viewport coordinates.
-            if (this.pinLocationValue !== null) {
-                const pinScreen = this.getPinLocation();
-                if (pinScreen) {
-                    const parentRect = this.img.nativeElement.parentElement.getClientRects()[0];
-                    // On Mac with shift, deltaY becomes 0 and deltaX carries the scroll.
-                    const delta = e.deltaY === 0 && e.deltaX ? e.deltaX : e.deltaY;
-                    const wheel = delta < 0 ? 1 : -1;
-                    const toScale = Math.min(300, Math.max(0.125, this.panzoom.getScale() * Math.exp((wheel * 0.7) / 3)));
-                    this.panzoom.zoomToPoint(toScale, {
-                        clientX: parentRect.left + pinScreen.x,
-                        clientY: parentRect.top + pinScreen.y
-                    });
-                    e.preventDefault();
-                    return;
-                }
-            }
-            // Panzoom will automatically use `deltaX` here instead
-            // of `deltaY`. On a mac, the shift modifier usually
-            // translates to horizontal scrolling, but Panzoom assumes
-            // the desired behavior is zooming.
-            this.panzoom.zoomWithWheel(e);
+            // Zoom centered on mouse cursor position.
+            // On Mac, shift+scroll translates to horizontal (deltaX); handle both axes.
+            const delta = e.deltaY === 0 && e.deltaX ? e.deltaX : e.deltaY;
+            const wheel = delta < 0 ? 1 : -1;
+            const toScale = Math.min(300, Math.max(0.125, this.panzoom.getScale() * Math.exp((wheel * 0.7) / 3)));
+            this.panzoom.zoomToPoint(toScale, { clientX: e.clientX, clientY: e.clientY });
+            e.preventDefault();
         });
-        this.img.nativeElement.parentElement.addEventListener('mouseleave', () => {
-            this.msgDiv.nativeElement.style.opacity = 0;
-        })
 
         // Fit image to container on every load (handles src changes + initial load)
         const onLoad = () => {
@@ -190,14 +162,6 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
 
     ngOnDestroy() {
         if (this.onSmartImagesLayoutChanged) window.removeEventListener("smartImagesLayoutChanged", this.onSmartImagesLayoutChanged);
-    }
-
-    private displayWheelMessage() {
-        clearTimeout(this.wheelMessageTimeout);
-        this.msgDiv.nativeElement.style.opacity = 1;
-        this.wheelMessageTimeout = setTimeout(() => {
-            this.msgDiv.nativeElement.style.opacity = 0;
-        }, 2000);
     }
 
     private syncPinPosition() {
