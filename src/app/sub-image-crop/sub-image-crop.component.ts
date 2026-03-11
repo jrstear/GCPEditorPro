@@ -16,13 +16,21 @@ CROSSHAIR_IMG.src = './assets/crosshair.png';
              [style.borderColor]="borderColor">
             <canvas #canvas [width]="CROP" [height]="CROP" (click)="onCanvasClick($event)"></canvas>
             <div *ngIf="heading !== null" class="compass-overlay"
-                 [title]="'Heading: ' + heading.toFixed(0) + '°'">
-                <svg viewBox="0 0 20 20" width="22" height="22"
+                 [title]="'North indicator | Camera tilt: ' + (pitch !== null ? (90 + pitch).toFixed(0) + '°' : 'N/A')">
+                <svg viewBox="0 0 20 20" width="18" height="18"
                      [style.transform]="'rotate(' + (-heading) + 'deg)'"
-                     style="display:block;">
+                     style="display:block;flex-shrink:0">
                     <polygon points="10,2 13,11 10,9 7,11" fill="#e74c3c"/>
                     <polygon points="10,18 13,11 10,9 7,11" fill="#ccc"/>
                 </svg>
+                <ng-container *ngIf="pitch !== null">
+                    <svg viewBox="0 0 16 12" width="12" height="9" style="display:block;flex-shrink:0">
+                        <rect x="0.5" y="3" width="15" height="8.5" rx="1.5" stroke="white" stroke-width="1.2" fill="none"/>
+                        <rect x="5.5" y="1" width="4" height="2.5" rx="0.5" stroke="white" stroke-width="1" fill="none"/>
+                        <circle cx="8" cy="7.5" r="2.8" stroke="white" stroke-width="1.2" fill="none"/>
+                    </svg>
+                    <span style="color:white;font-size:9px;line-height:1;white-space:nowrap">{{(90 + pitch).toFixed(0)}}°</span>
+                </ng-container>
             </div>
         </div>
         <div class="crop-label" [title]="imgName">{{imgName}}</div>
@@ -41,12 +49,11 @@ CROSSHAIR_IMG.src = './assets/crosshair.png';
             top: 4px;
             left: 4px;
             background: rgba(0,0,0,0.45);
-            border-radius: 50%;
-            width: 26px;
-            height: 26px;
+            border-radius: 12px;
+            padding: 3px 5px 3px 3px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 3px;
             pointer-events: none;
         }
         canvas { display: block; }
@@ -73,6 +80,8 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
     @Input() markerBbox: { x1: number; y1: number; x2: number; y2: number } | null = null;
     /** Camera yaw heading in degrees clockwise from north, or null if unavailable. */
     @Input() heading: number | null = null;
+    /** Camera gimbal pitch in degrees (-90 = nadir, 0 = horizontal), or null if unavailable. */
+    @Input() pitch: number | null = null;
     /** Emits full-image pixel coords when user clicks in the crop canvas. */
     @Output() clickPosition = new EventEmitter<{x: number, y: number}>();
     /** Emits when user shift-clicks to un-tag (revert confirmed→estimated). */

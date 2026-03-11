@@ -199,6 +199,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                     estimateImY: res.imY,
                     estimateConfidence: res.confidence,
                     heading: null,
+                    pitch: null,
                 };
             } else {
                 obj = {
@@ -227,15 +228,15 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
         this.loadImages(0);
 
-        const headingPromises = this.rawImages.map(desc => {
+        const orientationPromises = this.rawImages.map(desc => {
             const imgInfo = imageByName.get(desc.image.imgName);
-            return imgInfo ? imgInfo.getHeading() : Promise.resolve(null);
+            return imgInfo ? imgInfo.getOrientation() : Promise.resolve({ yaw: null, pitch: null });
         });
 
         Promise.all([
             Promise.all(this.rawImages.map(item => item.coords)),
-            Promise.all(headingPromises),
-        ]).then(([coords, headings]) => {
+            Promise.all(orientationPromises),
+        ]).then(([coords, orientations]) => {
             for (let i = 0; i < coords.length; i++) {
                 var coord = coords[i];
                 var item = this.rawImages[i];
@@ -243,7 +244,8 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                 if (coord) {
                     item.distance = getDistanceFromLatLonInM(this.gcpCoords.y, this.gcpCoords.x, coord.lat, coord.lng);
                 }
-                item.heading = headings[i];
+                item.heading = orientations[i].yaw;
+                item.pitch = orientations[i].pitch;
             }
 
             this.filterImages();
@@ -424,6 +426,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                     estimateImY: 0,
                     estimateConfidence: null,
                     heading: null,
+                    pitch: null,
                 };
 
                 newImages.push(descr);
@@ -438,15 +441,15 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
         this.loadImages(0);
 
-        const newHeadingPromises = newImages.map(desc => {
+        const newOrientationPromises = newImages.map(desc => {
             const imgInfo = this.storage.images.find(img => img.name === desc.image.imgName);
-            return imgInfo ? imgInfo.getHeading() : Promise.resolve(null);
+            return imgInfo ? imgInfo.getOrientation() : Promise.resolve({ yaw: null, pitch: null });
         });
 
         Promise.all([
             Promise.all(this.rawImages.map(item => item.coords)),
-            Promise.all(newHeadingPromises),
-        ]).then(([coords, headings]) => {
+            Promise.all(newOrientationPromises),
+        ]).then(([coords, orientations]) => {
             for (let i = 0; i < coords.length; i++) {
                 var coord = coords[i];
                 var item = this.rawImages[i];
@@ -455,9 +458,10 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                     item.distance = getDistanceFromLatLonInM(this.gcpCoords.y, this.gcpCoords.x, coord.lat, coord.lng);
                 }
             }
-            // Apply headings only to the newly added images
+            // Apply orientation only to the newly added images
             for (let i = 0; i < newImages.length; i++) {
-                newImages[i].heading = headings[i];
+                newImages[i].heading = orientations[i].yaw;
+                newImages[i].pitch = orientations[i].pitch;
             }
 
             this.filterImages();
@@ -741,5 +745,7 @@ class ImageDescriptor {
     public estimateConfidence: string;
     /** Camera yaw heading in degrees clockwise from north, or null if not available. */
     public heading: number | null;
+    /** Camera gimbal pitch in degrees (-90 = nadir, 0 = horizontal), or null if not available. */
+    public pitch: number | null;
 }
 
