@@ -25,6 +25,7 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
     }
 
     @Output() public pin = new EventEmitter();
+    @Output() public unpin = new EventEmitter<void>();
     @Input() public src: string;
     /** Pin color: 'yellow' (unconfirmed estimate) or 'green' (user-confirmed). */
     @Input() public pinColor: string = 'yellow';
@@ -115,6 +116,14 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
             start = Date.now();
 
             if (millis > 250) {
+
+                // Shift-click: un-tag (revert confirmed→estimated).
+                if (e.shiftKey) {
+                    if (this.pinLocationValue !== null) {
+                        this.unpin.emit();
+                    }
+                    return;
+                }
 
                 this.pinLocation = this.getPos(e);
 

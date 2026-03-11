@@ -50,6 +50,8 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
     @Input() markerBbox: { x1: number; y1: number; x2: number; y2: number } | null = null;
     /** Emits full-image pixel coords when user clicks in the crop canvas. */
     @Output() clickPosition = new EventEmitter<{x: number, y: number}>();
+    /** Emits when user shift-clicks to un-tag (revert confirmed→estimated). */
+    @Output() unpin = new EventEmitter<void>();
 
     @ViewChild('canvas') canvasRef: ElementRef<HTMLCanvasElement>;
 
@@ -157,6 +159,10 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
 
     public onCanvasClick(e: MouseEvent): void {
         if (!this._img) return;
+        if (e.shiftKey) {
+            this.unpin.emit();
+            return;
+        }
         const { sx, sy, sw, sh } = this._getSourceRect();
         this.clickPosition.emit({
             x: sx + e.offsetX * (sw / CROP),

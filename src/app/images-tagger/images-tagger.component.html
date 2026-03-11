@@ -70,7 +70,8 @@
                 [hasEstimate]="desc.isTagged"
                 [isSelected]="desc === selectedDesc"
                 [markerBbox]="desc.image.markerBbox"
-                (clickPosition)="pinFromSubImage($event, desc)">
+                (clickPosition)="pinFromSubImage($event, desc)"
+                (unpin)="untag(desc)">
             </app-sub-image-crop>
         </div>
     </div>
@@ -90,6 +91,7 @@
             [cropFocus]="getCropFocus(selectedDesc)"
             [autoFit]="!getCropFocus(selectedDesc)"
             (pin)="pin($event, selectedDesc)"
+            (unpin)="untag(selectedDesc)"
             style="display: block; overflow: hidden; width: 100%; flex: 1; min-height: 0;">
         </app-smartimage>
         <div *ngIf="selectedDesc.imageUrl === null" class="p-4 text-muted">
@@ -125,7 +127,7 @@
                 </a>
             </span>
             <app-smartimage #smartImage *ngIf="desc.imageUrl !== null" [src]="desc.imageUrl" [pinLocation]="desc.pinLocation"
-                (pin)="pin($event, desc)" style="display: block; overflow: hidden">
+                (pin)="pin($event, desc)" (unpin)="untag(desc)" style="display: block; overflow: hidden">
             </app-smartimage>
         </div>
         <div class="alert alert-info mt-2" *ngIf="!isLoading && filterByDistance && rawImages.length > 0 && images.length === 0">

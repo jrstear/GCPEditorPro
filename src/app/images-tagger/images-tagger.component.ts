@@ -194,7 +194,10 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                     imageUrl: this.storage.getImageUrl(img.name) !== null ? this.sanitizer.bypassSecurityTrustResourceUrl(this.storage.getImageUrl(img.name)) : null,
                     otherGcps: gcps.map(gcp => gcp.gcpName),
                     coords: coord,
-                    distance: null
+                    distance: null,
+                    estimateImX: res.imX,
+                    estimateImY: res.imY,
+                    estimateConfidence: res.confidence,
                 };
             } else {
                 obj = {
@@ -407,7 +410,10 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                     imageUrl: imageUrl,
                     otherGcps: [],
                     coords: coord,
-                    distance: null
+                    distance: null,
+                    estimateImX: 0,
+                    estimateImY: 0,
+                    estimateConfidence: null,
                 };
 
                 newImages.push(descr);
@@ -493,6 +499,22 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         desc.image.confirmed = true;
         desc.image.confidence = 'confirmed';
         desc.pinLocation = location;
+    }
+
+    public untag(desc: ImageDescriptor): void {
+        if (!desc || !desc.image.confirmed) return;
+        desc.image.confirmed = false;
+        desc.image.confidence = desc.estimateConfidence ?? 'projection';
+        if (desc.estimateImX || desc.estimateImY) {
+            // Restore original pipeline estimate position
+            desc.image.imX = desc.estimateImX;
+            desc.image.imY = desc.estimateImY;
+            desc.pinLocation = { x: desc.estimateImX, y: desc.estimateImY };
+            desc.isTagged = true;
+        } else {
+            // No original estimate — fully unpin
+            this.unpin(desc);
+        }
     }
 
     public unpin(desc: ImageDescriptor): void{
@@ -692,5 +714,9 @@ class ImageDescriptor {
     public otherGcps: string[];
     public coords: Promise<GPSCoords>;
     public distance: number;
+    /** Pipeline pixel estimate at load time — used to restore state on shift-click un-tag. */
+    public estimateImX: number;
+    public estimateImY: number;
+    public estimateConfidence: string;
 }
 
