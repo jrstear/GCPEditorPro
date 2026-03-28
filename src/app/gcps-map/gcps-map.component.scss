@@ -13,6 +13,28 @@
     user-select: none;
 }
 
+// Map page layout: both columns fill the viewport between navbar and fixed-bottom bar.
+// The list scrolls independently; the map stays fully visible at all times.
+.gcp-map-row {
+    height: calc(100vh - 122px); // 56px navbar + 66px fixed-bottom bar
+}
+
+.gcp-list-col,
+.gcp-map-col {
+    height: 100%;
+}
+
+.gcp-list-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.gcp-list-scroll {
+    overflow-y: auto;
+    flex: 1;
+}
+
 .leaflet-popup{
     min-width: 250px;
 }

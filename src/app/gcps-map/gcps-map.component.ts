@@ -120,7 +120,7 @@ export class GcpsMapComponent implements OnInit {
                 title: item.name,
                 riseOnHover: true,
                 zIndexOffset: isTopGcp ? 1000 : 0,
-                icon: isTopGcp
+                icon: this.storage.hasPipelineEstimates
                     ? this.createTopGcpIcon(item.name, confirmedForIcon)
                     : icon({
                         iconSize: [25, 41],

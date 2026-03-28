@@ -1,6 +1,6 @@
-<div class="row">
-    <div class="col-xl-3 col-lg-4 col-6" style="min-height: 400px;">
-        <div class="card">
+<div class="row gcp-map-row">
+    <div class="col-xl-3 col-lg-4 col-6 gcp-list-col">
+        <div class="card gcp-list-card">
             <div class="card-header">
                 <strong>Ground Control Points</strong>
             </div>
@@ -10,7 +10,7 @@
                  title="GCP-* control points (file order). Tag ≥7 images each to reach green.">
                 {{gcpControlConfirmedCount}} / {{gcpControlTotal}} GCPs sufficiently tagged
             </div>
-            <ul class="list-group list-group-flush">
+            <ul class="list-group list-group-flush gcp-list-scroll">
                 <li class="list-group-item" *ngFor="let gcpMark of gcps" (click)="select(gcpMark)" (dblclick)="editImages(gcpMark.gcp)"
                     [ngClass]="{ 'bg-dark': this.selectedGCP != null && this.selectedGCP.gcp.name === gcpMark.gcp.name, 'text-white': this.selectedGCP != null && this.selectedGCP.gcp.name === gcpMark.gcp.name }">
                     {{gcpMark.gcp.name}}
@@ -35,7 +35,7 @@
         </div>
         <div class="mt-2" *ngIf="gcps.length === 0"><fa-icon icon="info-circle" class="mr-2"></fa-icon>Click the marker button from the top left side of the map to add a GCP.</div>
     </div>
-    <div class="col-xl-9 col-lg-8 col-6" style="min-height: 400px;">
+    <div class="col-xl-9 col-lg-8 col-6 gcp-map-col">
         <div class="h-100" leaflet (leafletMapReady)="onMapReady($event)" [leafletOptions]="options">
         </div>
     </div>
