@@ -163,6 +163,7 @@ export class LoadConfigTxtComponent implements OnInit {
                     this.errors = null;
                     this.descriptor = res.descriptor;
                     this.txtFileName = file.name;
+                    this.storageService.inputFileName = file.name;
 
                     this.txtParseResult = res;
                     this.isReady = true;

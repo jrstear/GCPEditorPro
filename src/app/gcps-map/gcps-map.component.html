@@ -18,7 +18,7 @@
                     <span *ngIf="storage.hasPipelineEstimates"
                           class="badge ml-2"
                           [ngClass]="gcpBadgeClass(gcpMark.confirmedCount)"
-                          title="{{gcpMark.confirmedCount}} confirmed / {{gcpMark.images.length}} total images (≥7 = green)">
+                          title="{{gcpMark.confirmedCount}} tagged / {{gcpMark.images.length}} total images (≥7 = green)">
                         {{gcpMark.confirmedCount}}/{{gcpMark.images.length}}
                     </span>
                     <!-- Standard file: old image count -->
