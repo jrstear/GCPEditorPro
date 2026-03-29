@@ -52,42 +52,31 @@ export class ExportConfigComponent implements OnInit {
         return content;
     }
 
-    /** Count of tagged (user-confirmed) image rows. */
-    public get confirmedCount(): number {
-        return this.imageGcps.filter(img => img.confirmed).length;
-    }
-
-    /** Derive the export filename from the input filename. */
-    private get exportFileName(): string {
+    /** Derive the download filename from the input filename.
+     *  {job}.txt → {job}_tagged.txt
+     *  {job}_tagged.txt → {job}_tagged.txt  (no double-suffix on round-trip reload)
+     *  (no input) → tagged.txt
+     */
+    private get downloadFileName(): string {
         const input = this.storage.inputFileName;
-        if (!input) return 'gcp_list_tagged.txt';
+        if (!input) return 'tagged.txt';
         const stem = input.replace(/\.[^.]+$/, '');
-        return stem + '_tagged.txt';
+        return stem.endsWith('_tagged') ? input : stem + '_tagged.txt';
     }
 
     public exportImgName(imgName: string): string {
         return exportImgName(imgName);
     }
 
-    public exportTxt() {
-        if (this.storage.getLicense().demo) {
-            window.dispatchEvent(new CustomEvent('enterLicense'));
-            return;
-        }
-        const content = this.getTxtContent();
-        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        FileSaver.saveAs(blob, 'gcp_list.txt');
-    }
-
     /** Export all rows (tagged + untagged). Tagged rows get col 8 = "tagged"; untagged get "". */
-    public exportConfirmed() {
+    public exportDownload() {
         if (this.storage.getLicense().demo) {
             window.dispatchEvent(new CustomEvent('enterLicense'));
             return;
         }
         const content = this.getTxtContent();
         const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-        FileSaver.saveAs(blob, this.exportFileName);
+        FileSaver.saveAs(blob, this.downloadFileName);
     }
 
     public back() {

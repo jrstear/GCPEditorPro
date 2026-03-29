@@ -62,24 +62,13 @@
     </div>
 </div>
 <div class="fixed-bottom bg-white border-top">
-    <div class="alert alert-info mb-0 py-2 px-3 border-bottom small">
-        <fa-icon icon="info-circle" class="mr-2"></fa-icon>
-        <strong>gcp_list.txt</strong> saves all rows and can be reloaded to resume work.
-        The tagged export saves all rows with column 8 set to <strong>tagged</strong> for tagged observations and empty for untagged ones.
-    </div>
-    <div class="d-flex justify-content-between align-items-center px-3 py-2">
+<div class="d-flex justify-content-between align-items-center px-3 py-2">
         <button class="btn btn-primary" (click)="back()">
             <fa-icon icon="long-arrow-alt-left" class="mr-2"></fa-icon>Back
         </button>
         <div class="d-flex align-items-center">
-            <button class="btn btn-secondary mr-2" (click)="exportTxt()">
-                <fa-icon icon="download" class="mr-2"></fa-icon>Download gcp_list.txt
-            </button>
-            <button class="btn btn-success"
-                    (click)="exportConfirmed()"
-                    [title]="confirmedCount + ' tagged observations'">
-                <fa-icon icon="download" class="mr-2"></fa-icon>Download tagged file
-                <span class="badge badge-light ml-1">{{confirmedCount}} tagged</span>
+            <button class="btn btn-primary" (click)="exportDownload()">
+                <fa-icon icon="download" class="mr-2"></fa-icon>Download
             </button>
         </div>
     </div>
