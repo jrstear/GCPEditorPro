@@ -184,7 +184,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
                         imX: res.imX,
                         imY: res.imY,
                         imgName: img.name,
-                        confirmed: res.confirmed ?? (res.confidence === 'confirmed' || res.confidence === 'mouse_click' || res.confidence === 'tagged'),
+                        confirmed: res.confirmed ?? (res.confidence === 'tagged'),
                         confidence: res.confidence,
                         extras: res.extras || [],
                         markerBbox: res.markerBbox || null,
@@ -522,7 +522,7 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         desc.image.imX = location.x;
         desc.image.imY = location.y;
         desc.image.confirmed = true;
-        desc.image.confidence = 'confirmed';
+        desc.image.confidence = 'tagged';
         desc.pinLocation = location;
     }
 

@@ -188,11 +188,14 @@ export class GcpsUtilsService {
 
             }
 
-            // Column 7 is the confidence field (e.g. "projection", "confirmed", "tagged").
+            // Column 7 is the confidence field (e.g. "projection", "tagged", "unknown").
             // Default to "unknown" if absent (older files without the column).
-            // "mouse_click" is a legacy alias for "confirmed"; "tagged" is the current export value.
+            // "confirmed" and "mouse_click" are legacy aliases for "tagged"; normalize on import.
             imgGcp.confidence = row[7]?.trim() || 'unknown';
-            imgGcp.confirmed = imgGcp.confidence === 'confirmed' || imgGcp.confidence === 'mouse_click' || imgGcp.confidence === 'tagged';
+            if (imgGcp.confidence === 'confirmed' || imgGcp.confidence === 'mouse_click') {
+                imgGcp.confidence = 'tagged';
+            }
+            imgGcp.confirmed = imgGcp.confidence === 'tagged';
 
             // Column 8 is the optional marker_bbox field (format: "x1,y1,x2,y2").
             if (row.length > 8 && row[8]?.trim()) {
@@ -264,10 +267,10 @@ export class GcpsUtilsService {
         };
 
         // Detect pipeline-generated files: any row with a known confidence value
-        // ('projection' or 'reconstruction') signals that emlid2gcp.py wrote this file
-        // and that GCP/image ordering is meaningful.
+        // ('projection', 'reconstruction', or 'tagged') signals that this file went
+        // through the pipeline workflow and that GCP/image ordering is meaningful.
         result.hasPipelineEstimates = imgGcps.some(
-            ig => ig.confidence === 'projection' || ig.confidence === 'reconstruction'
+            ig => ig.confidence === 'projection' || ig.confidence === 'reconstruction' || ig.confidence === 'tagged'
         );
 
         return result;
@@ -476,7 +479,7 @@ export class ImageGcp {
 
     public extras: string[];
 
-    /** Confidence level: "projection" (pipeline estimate), "confirmed" (user-positioned), "unknown" (legacy). "mouse_click" accepted as legacy alias for "confirmed". */
+    /** Confidence level: "projection" (pipeline estimate), "tagged" (user-positioned), "unknown" (legacy). "confirmed" and "mouse_click" are legacy aliases normalized to "tagged" on import. */
     public confidence?: string;
 
     /** True when the user has shift-clicked to confirm this pixel estimate. */
