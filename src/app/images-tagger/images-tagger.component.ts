@@ -292,6 +292,8 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
         this.zoomView = !this.zoomView;
         localStorage.setItem('zoomView', this.zoomView.toString());
         this.filterImages();
+        // Blur the toggle button so spacebar in grid view doesn't reactivate it.
+        (document.activeElement as HTMLElement)?.blur?.();
     }
 
     public selectDesc(desc: ImageDescriptor) {
