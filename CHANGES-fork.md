@@ -7,22 +7,26 @@ for the end-to-end workflow.
 
 ---
 
-## 1. Progress indicators
+## 1. Image folder picker
+
+On the load page, after selecting the GCP file, a **folder picker** (`webkitdirectory`) is now offered.  Selecting an image folder loads all matching images at once, instead of requiring users to multi-select files for each target (although this functionality is still present).
+
+## 2. Progress indicators
 
 Each row in the target list now shows a **confirmed / total** badge colored
 red (0–2), amber (3–6), or green (≥ 7) to indicate tagging coverage.  Pin colors match their badges, and a summary line above the list shows how many GCP- points have reached green (same color thresholds).  The coloring is consistent with ASPRS guidelines of 3 minimum and 7+ recommended.  This gives users clear progress indicators: tagging is sufficient when the badge/pin/summary is green.
 
-## 2. Scroll-to-zoom on cursor
+## 3. Scroll-to-zoom on cursor
 
 Previously, zooming in the full-image panel required holding **Shift** while
 scrolling.  Plain (unshifted) scroll now zooms, and zoom is centered on the current cursor position.  This behavior is consistent with QGIS — pan to the area of interest, cursor on target, scroll to zoom.
 
-## 3. Zoom view
+## 4. Zoom view
 
 A **zoom view** was added, with a two-panel layout: a scrollable column of cropped and smoothed thumbnails on the left, and a larger non-smoothed image panel on the
 right.  Hovering over a thumbnail selects it in the right panel.
 
-## 4. Compass and tilt
+## 5. Compass and tilt
 
 In zoom view, if image files include sufficient metadata, small overlays in the top-left corners of the images provide additional context info:
 
@@ -34,26 +38,26 @@ In zoom view, if image files include sufficient metadata, small overlays in the 
   the degrees-from-nadir angle: `(90 + GimbalPitchDegree)°`, so 0° = straight
   down, 45° = typical oblique pass, 90° = horizontal.
 
-## 5. Tag status
+## 6. Tag status
 
 If the input file contains an (optional) 8th column containing one of the below values, it is interpreted as pixel coordinate confidence, and zoom is set as the default tagging view.  Valid values are: `projection` (EXIF-derived estimate), `color` (color-detection refined), `reconstruction` (SfM-refined),  and `tagged` (manual selection).  This value is read on input, updated during tagging, and written upon download, and its values are shown on the download screen.   Tagged thumbnails have a green border, estimated are yellow, and no-status is grey.
 
-## 6. Space to tag
+## 7. Space to tag
 
 In zoom view, pressing **Space** confirms the current image's estimated tag position as `tagged` (equivalent to clicking in the image).  After confirming, the view advances automatically to the next unconfirmed image, enabling easy acceptance of excellent estimates.
 
-## 7. Shift-click to un-tag
+## 8. Shift-click to un-tag
 
 A `tagged` location can be reverted to its (estimated) state by a **shift-click** anywhere in the image.
 
 **Bug fix** - Previously, the only way to undo an accidental confirmation was to click
 the correct pixel position.  Untagging is better, eg if the target can not be found or is badly distorted.
 
-## 8. Thumbnail bounding box
+## 9. Thumbnail bounding box
 
 If the input file contains an (optional) 9th column, it is interpreted as a target bounding box, and determines the source crop region for the thumbnail.  This enables upstream tools to set this (eg via automated pattern detection) for efficient review (without zooming).
 
-## 9. Target ordering
+## 10. Target ordering
 
 Targets and images are ordered according to the input file, enabling upstream tools to order them as desired (eg, rank targets by dispersion, and images by a mix of nadir and oblique).
 
