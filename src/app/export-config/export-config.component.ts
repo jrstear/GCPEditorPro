@@ -44,10 +44,19 @@ export class ExportConfigComponent implements OnInit {
 
     private getTxtContent(): string {
         let content = this.projection.to_str() + '\n';
+        // For pipeline files (input had a confidence column), write the 8th
+        // 'tagged'/'' status column. For vanilla 7-column input, preserve the
+        // upstream format including any trailing extras, with no status column.
+        const writeStatus = this.storage.hasPipelineEstimates;
         for (const img of this.imageGcps) {
-            const status = img.confirmed ? 'tagged' : '';
-            const row = `${img.geoX}\t${img.geoY}\t${img.geoZ}\t${img.imX}\t${img.imY}\t${exportImgName(img.imgName)}\t${img.gcpName}\t${status}`;
-            content += row.trimEnd() + '\n';
+            const base = `${img.geoX}\t${img.geoY}\t${img.geoZ}\t${img.imX}\t${img.imY}\t${exportImgName(img.imgName)}\t${img.gcpName}`;
+            if (writeStatus) {
+                const status = img.confirmed ? 'tagged' : '';
+                content += `${base}\t${status}`.trimEnd() + '\n';
+            } else {
+                const extras = (img.extras && img.extras.length) ? '\t' + img.extras.join('\t') : '';
+                content += `${base}${extras}`.trimEnd() + '\n';
+            }
         }
         return content;
     }
