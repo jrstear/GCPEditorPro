@@ -78,7 +78,7 @@ of the original input file.  Now the original ordering is preserved, enabling mu
 | `src/app/smartimage/smartimage.component.ts` | Scroll-to-zoom on cursor (removed shift-to-zoom guard); shift-click unpin; new `autoFit` / `cropFocus` modes; `cropBox` overlay synced to mirror sub-image-crop selection on the large panel |
 | `src/app/smartimage/smartimage.component.html` | Adds `.fill` class binding (driven by `autoFit`); adds `cropBoxDiv` overlay element; removes "press SHIFT to zoom" hint message |
 | `src/app/smartimage/smartimage.component.scss` | `.smart-image.fill` styles (fill mode for fixed-size panels) |
-| `src/app/gcps-map/gcps-map.component.ts` | Progress badges; summary line; GCP-\*/CHK-\*/DUP-\* pin styles |
+| `src/app/gcps-map/gcps-map.component.ts` | Progress badges; summary line; GCP-\*/CHK-\* pin styles (control pin labeled, checkpoint pin small) |
 | `src/app/gcps-map/gcps-map.component.html` | Summary line; pin rendering |
 | `src/app/gcps-map/gcps-map.component.scss` | Viewport-fill layout (scrollable target list, fixed map) |
 | `src/app/export-config/export-config.component.ts` | Split export (control / check / full); pipeline vs non-pipeline branching; export uses `inputFileName` to derive `{job}_tagged.txt` |
