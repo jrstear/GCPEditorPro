@@ -20,6 +20,8 @@ export class StorageService {
     public hasPipelineEstimates: boolean = false;
     /** Original filename of the loaded .txt file, used to derive export filename. */
     public inputFileName: string = '';
+    /** Saved scroll position of the GCP list, restored after returning from tagging. */
+    public gcpListScrollTop: number = 0;
 
     public saveImage(image: ImageInfo): ImageInfo {
         const match = this.images.filter(item => item.name === image.name);

@@ -245,6 +245,14 @@ export class GcpsMapComponent implements OnInit {
         }
 
         this.appRef.tick();
+
+        // Restore saved scroll position (e.g. after returning from images-tagger).
+        if (this.storage.gcpListScrollTop) {
+            setTimeout(() => {
+                const scrollEl = document.querySelector('.gcp-list-scroll');
+                if (scrollEl) scrollEl.scrollTop = this.storage.gcpListScrollTop;
+            }, 0);
+        }
     }
 
     private checkIsReady(): void {
@@ -372,6 +380,8 @@ https://a.tile.openstreetmap.org/{z}/{x}/{y}.png
     }
 
     editImages(gcp: GCP) {
+        const scrollEl = document.querySelector('.gcp-list-scroll');
+        if (scrollEl) this.storage.gcpListScrollTop = scrollEl.scrollTop;
         this.ngZone.run(() => this.router.navigateByUrl('/images-tagger/' + encodeURIComponent(gcp.name))).then();
     }
 
@@ -383,6 +393,8 @@ https://a.tile.openstreetmap.org/{z}/{x}/{y}.png
         };
         window.addEventListener("smartImagesLayoutChanged", this.onSmartImagesLayoutChanged);
     }
+
+
 
     ngOnDestroy(){
         if (this.onSmartImagesLayoutChanged) window.removeEventListener("smartImagesLayoutChanged", this.onSmartImagesLayoutChanged);
