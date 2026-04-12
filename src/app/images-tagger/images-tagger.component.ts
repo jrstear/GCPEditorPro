@@ -63,8 +63,11 @@ export class ImagesTaggerComponent implements OnInit, OnDestroy {
 
     public get gcpBadgeClass(): string {
         const n = this.confirmedCount;
-        if (n >= ImagesTaggerComponent.CONFIRMED_GREEN) return 'badge-success';
-        if (n >= ImagesTaggerComponent.CONFIRMED_AMBER) return 'badge-warning';
+        const total = this.rawImages.length;
+        const green = Math.min(ImagesTaggerComponent.CONFIRMED_GREEN, total);
+        const amber = Math.min(ImagesTaggerComponent.CONFIRMED_AMBER, total);
+        if (n >= green) return 'badge-success';
+        if (n >= amber) return 'badge-warning';
         return 'badge-danger';
     }
 

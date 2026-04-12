@@ -32,12 +32,14 @@ export class GcpsMapComponent implements OnInit {
 
     public get gcpControlConfirmedCount(): number {
         return this.gcps.filter(g => g.gcp.name.startsWith('GCP-') &&
-            g.confirmedCount >= GcpsMapComponent.CONFIRMED_GREEN).length;
+            g.confirmedCount >= Math.min(GcpsMapComponent.CONFIRMED_GREEN, g.images.length)).length;
     }
 
-    public gcpBadgeClass(confirmedCount: number): string {
-        if (confirmedCount >= GcpsMapComponent.CONFIRMED_GREEN) return 'badge-success';
-        if (confirmedCount >= GcpsMapComponent.CONFIRMED_AMBER) return 'badge-warning';
+    public gcpBadgeClass(confirmedCount: number, totalImages: number): string {
+        const green = Math.min(GcpsMapComponent.CONFIRMED_GREEN, totalImages);
+        const amber = Math.min(GcpsMapComponent.CONFIRMED_AMBER, totalImages);
+        if (confirmedCount >= green) return 'badge-success';
+        if (confirmedCount >= amber) return 'badge-warning';
         return 'badge-danger';
     }
 
@@ -48,12 +50,14 @@ export class GcpsMapComponent implements OnInit {
         return 'text-danger';
     }
 
-    private createTopGcpIcon(gcpName: string, confirmedCount: number): L.DivIcon {
+    private createTopGcpIcon(gcpName: string, confirmedCount: number, totalImages: number): L.DivIcon {
         let bg: string;
         let fg: string;
-        if (confirmedCount >= GcpsMapComponent.CONFIRMED_GREEN) {
+        const green = Math.min(GcpsMapComponent.CONFIRMED_GREEN, totalImages);
+        const amber = Math.min(GcpsMapComponent.CONFIRMED_AMBER, totalImages);
+        if (confirmedCount >= green) {
             bg = '#28a745'; fg = '#fff';
-        } else if (confirmedCount >= GcpsMapComponent.CONFIRMED_AMBER) {
+        } else if (confirmedCount >= amber) {
             bg = '#ffc107'; fg = '#212529';
         } else {
             bg = '#dc3545'; fg = '#fff';
@@ -111,17 +115,19 @@ export class GcpsMapComponent implements OnInit {
             const isTopGcp = this.storage.hasPipelineEstimates &&
                 typeof item.name === "string" && item.name.startsWith("GCP-");
 
-            // Pre-compute confirmed count for icon colour (GcpInfo not yet built).
-            const confirmedForIcon = this.storage.imageGcps !== null
-                ? this.storage.imageGcps.filter(ig => ig.gcpName === item.name && ig.confirmed).length
-                : 0;
+            // Pre-compute confirmed/total counts for icon colour (GcpInfo not yet built).
+            const allForGcp = this.storage.imageGcps !== null
+                ? this.storage.imageGcps.filter(ig => ig.gcpName === item.name)
+                : [];
+            const confirmedForIcon = allForGcp.filter(ig => ig.confirmed).length;
+            const totalForIcon = allForGcp.length;
 
             const markerLayer = marker(new L.LatLng(coords[1], coords[0], coords[2]), {
                 title: item.name,
                 riseOnHover: true,
                 zIndexOffset: isTopGcp ? 1000 : 0,
                 icon: this.storage.hasPipelineEstimates
-                    ? this.createTopGcpIcon(item.name, confirmedForIcon)
+                    ? this.createTopGcpIcon(item.name, confirmedForIcon, totalForIcon)
                     : icon({
                         iconSize: [25, 41],
                         iconAnchor: [13, 41],

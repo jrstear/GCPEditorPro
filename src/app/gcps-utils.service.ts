@@ -267,10 +267,11 @@ export class GcpsUtilsService {
         };
 
         // Detect pipeline-generated files: any row with a known confidence value
-        // ('projection', 'reconstruction', or 'tagged') signals that this file went
-        // through the pipeline workflow and that GCP/image ordering is meaningful.
+        // signals that this file went through the pipeline workflow and that
+        // GCP/image ordering is meaningful.
+        const PIPELINE_CONFIDENCES = ['projection', 'reconstruction', 'tagged', 'ortho_projection'];
         result.hasPipelineEstimates = imgGcps.some(
-            ig => ig.confidence === 'projection' || ig.confidence === 'reconstruction' || ig.confidence === 'tagged'
+            ig => PIPELINE_CONFIDENCES.includes(ig.confidence)
         );
 
         return result;
