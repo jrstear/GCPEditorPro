@@ -104,7 +104,7 @@
             *ngIf="selectedDesc.imageUrl !== null"
             [src]="selectedDesc.imageUrl"
             [pinLocation]="selectedDesc.pinLocation"
-            [pinColor]="selectedDesc.image.confirmed ? 'green' : 'yellow'"
+            [confirmed]="selectedDesc.image.confirmed"
             [cropBox]="getCropBox(selectedDesc)"
             [cropFocus]="getCropFocus(selectedDesc)"
             [autoFit]="!getCropFocus(selectedDesc)"
@@ -145,6 +145,7 @@
                 </a>
             </span>
             <app-smartimage #smartImage *ngIf="desc.imageUrl !== null" [src]="desc.imageUrl" [pinLocation]="desc.pinLocation"
+                [confirmed]="desc.image.confirmed"
                 (pin)="pin($event, desc)" (unpin)="untag(desc)" style="display: block; overflow: hidden">
             </app-smartimage>
         </div>

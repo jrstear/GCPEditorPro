@@ -27,8 +27,8 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
     @Output() public pin = new EventEmitter();
     @Output() public unpin = new EventEmitter<void>();
     @Input() public src: string;
-    /** Pin color: 'yellow' (unconfirmed estimate) or 'green' (user-confirmed). */
-    @Input() public pinColor: string = 'yellow';
+    /** Whether the pin position is user-confirmed (crosshair) vs estimated (yellow +). */
+    @Input() public confirmed: boolean = false;
     /** When true, zoom/pan the image to fit its container on each load. Use in fixed-size panels. */
     @Input() public autoFit: boolean = false;
     /** Crop-box to draw on the large image (matches the selected sub-image crop). */
@@ -54,6 +54,11 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
     ngOnChanges(changes: SimpleChanges) {
         if (changes['cropBox']) {
             this.syncCropBox();
+        }
+        // When confirmed state changes, the pin element swaps (crosshair ↔ yellow +);
+        // re-sync its position after Angular updates the DOM.
+        if (changes['confirmed'] && this.pinLocationValue !== null) {
+            setTimeout(() => this.syncPinPosition(), 0);
         }
         // NOTE: cropFocus is intentionally NOT handled here to avoid an infinite
         // zone.js loop (new object reference each call → ngOnChanges → panzoom event
@@ -129,8 +134,8 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
 
                 const rect = this.img.nativeElement.parentElement.getClientRects()[0];
 
-                this.pinDiv.nativeElement.style.left = (e.clientX - rect.left - this.pinDiv.nativeElement.width / 2) + 'px';
-                this.pinDiv.nativeElement.style.top = (e.clientY - rect.top - this.pinDiv.nativeElement.height / 2) + 'px';
+                this.pinDiv.nativeElement.style.left = (e.clientX - rect.left - 16) + 'px';
+                this.pinDiv.nativeElement.style.top = (e.clientY - rect.top - 16) + 'px';
 
                 this.pin.emit(this.pinLocation);
 
@@ -180,8 +185,8 @@ export class SmartimageComponent implements OnInit, OnChanges, AfterViewInit {
         const location = this.getPinLocation();
         if (!location) return;
 
-        this.pinDiv.nativeElement.style.left = (location.x - this.pinDiv.nativeElement.width / 2) + 'px';
-        this.pinDiv.nativeElement.style.top = (location.y - this.pinDiv.nativeElement.height / 2) + 'px';
+        this.pinDiv.nativeElement.style.left = (location.x - 16) + 'px';
+        this.pinDiv.nativeElement.style.top = (location.y - 16) + 'px';
         this.pinDiv.nativeElement.style.display = 'block';
     }
 

@@ -175,18 +175,40 @@ export class SubImageCropComponent implements AfterViewInit, OnChanges {
         ctx.clearRect(0, 0, CROP, CROP);
         ctx.drawImage(this._img, sx, sy, sw, sh, 0, 0, CROP, CROP);
 
-        // Draw crosshair.png at GCP position within crop.
-        // Yellow (no filter) = unconfirmed estimate; green filter = confirmed.
+        // Draw marker at GCP position within crop.
+        // Confirmed: crosshair.png; Estimate: yellow + with dark outline.
         if (this.hasEstimate || this.confirmed) {
             const px = (cx - sx) * (CROP / sw);
             const py = (cy - sy) * (CROP / sh);
-            const drawCrosshair = () => {
-                ctx.drawImage(CROSSHAIR_IMG, px - CROSSHAIR_SIZE / 2, py - CROSSHAIR_SIZE / 2, CROSSHAIR_SIZE, CROSSHAIR_SIZE);
-            };
-            if (CROSSHAIR_IMG.complete && CROSSHAIR_IMG.naturalWidth > 0) {
-                drawCrosshair();
+            if (this.confirmed) {
+                const drawCrosshair = () => {
+                    ctx.drawImage(CROSSHAIR_IMG, px - CROSSHAIR_SIZE / 2, py - CROSSHAIR_SIZE / 2, CROSSHAIR_SIZE, CROSSHAIR_SIZE);
+                };
+                if (CROSSHAIR_IMG.complete && CROSSHAIR_IMG.naturalWidth > 0) {
+                    drawCrosshair();
+                } else {
+                    crosshairCallbacks.push(() => this._draw());
+                }
             } else {
-                crosshairCallbacks.push(() => this._draw());
+                // Yellow + for unconfirmed estimates
+                const arm = 10;
+                ctx.save();
+                // Dark outline for visibility against any background
+                ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(px - arm, py); ctx.lineTo(px + arm, py);
+                ctx.moveTo(px, py - arm); ctx.lineTo(px, py + arm);
+                ctx.stroke();
+                // Yellow fill
+                ctx.strokeStyle = '#ffc107';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(px - arm, py); ctx.lineTo(px + arm, py);
+                ctx.moveTo(px, py - arm); ctx.lineTo(px, py + arm);
+                ctx.stroke();
+                ctx.restore();
             }
         }
     }

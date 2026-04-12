@@ -51,8 +51,15 @@ export class ExportConfigComponent implements OnInit {
         for (const img of this.imageGcps) {
             const base = `${img.geoX}\t${img.geoY}\t${img.geoZ}\t${img.imX}\t${img.imY}\t${exportImgName(img.imgName)}\t${img.gcpName}`;
             if (writeStatus) {
-                const status = img.confirmed ? 'tagged' : '';
-                content += `${base}\t${status}`.trimEnd() + '\n';
+                if (img.confirmed) {
+                    // User-confirmed: write 'tagged', drop markerBbox (user placed pin manually)
+                    content += `${base}\ttagged\n`;
+                } else {
+                    // Unconfirmed: preserve original confidence + markerBbox exactly as imported
+                    const conf = img.confidence || '';
+                    const bbox = img.markerBbox ? `${img.markerBbox.x1},${img.markerBbox.y1},${img.markerBbox.x2},${img.markerBbox.y2}` : '';
+                    content += `${base}\t${conf}\t${bbox}`.trimEnd() + '\n';
+                }
             } else {
                 const extras = (img.extras && img.extras.length) ? '\t' + img.extras.join('\t') : '';
                 content += `${base}${extras}`.trimEnd() + '\n';
