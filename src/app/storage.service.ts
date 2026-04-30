@@ -127,10 +127,18 @@ class ImageInfo {
         if (this._orientation !== undefined) return Promise.resolve(this._orientation);
         return exifr.parse(this._file, { xmp: true })
             .then((result: any) => {
-                const yaw = result?.GimbalYawDegree ?? result?.FlightYawDegree;
+                const rawYaw = result?.GimbalYawDegree ?? result?.FlightYawDegree;
+                const roll = result?.GimbalRollDegree;
                 const p = result?.GimbalPitchDegree;
+                // GimbalRoll=180° means the camera is rotated 180° around its optical
+                // axis, so the captured image is rotated 180° relative to a roll-0
+                // capture at the same yaw. Add 180° so the compass arrow matches the
+                // displayed image rather than the bare gimbal-yaw EXIF tag.
+                const yaw = (typeof rawYaw === 'number')
+                    ? rawYaw + ((typeof roll === 'number' && Math.abs(roll - 180) < 1) ? 180 : 0)
+                    : null;
                 this._orientation = {
-                    yaw: typeof yaw === 'number' ? yaw : null,
+                    yaw,
                     pitch: typeof p === 'number' ? p : null,
                 };
                 return this._orientation;
